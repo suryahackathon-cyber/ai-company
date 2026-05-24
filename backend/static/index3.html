@@ -84,13 +84,13 @@
     .bubble-decision { background: #E8F5E9; color: #1B5E20; border-left: 3px solid #4CAF50; }
     .chat-name { font-size: 11px; font-weight: 600; margin-bottom: 3px; }
     .projects-panel { background:#fff; border-radius:12px; border:1px solid #e5e5e5; padding:1.5rem; margin-bottom:1.5rem; }
-    .project-item { display:flex; align-items:center; gap:12px; padding:10px 8px; border-bottom:0.5px solid #f0f0f0; cursor:pointer; border-radius:8px; transition:background 0.2s; }
+    .project-item { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:0.5px solid #f0f0f0; cursor:pointer; transition:background 0.2s; }
     .project-item:last-child { border-bottom:none; }
-    .project-item:hover { background:#f8f8f6; }
+    .project-item:hover { background:#f8f8f6; border-radius:8px; padding:10px 8px; }
     .project-dot { width:8px; height:8px; border-radius:50%; background:#534AB7; flex-shrink:0; }
     .project-name { font-size:13px; font-weight:500; color:#1a1a2e; flex:1; }
     .project-meta { font-size:11px; color:#888; }
-    .project-badge { font-size:11px; background:#534AB711; color:#534AB7; padding:2px 8px; border-radius:20px; white-space:nowrap; }
+    .project-badge { font-size:11px; background:#534AB711; color:#534AB7; padding:2px 8px; border-radius:20px; }
   </style>
 </head>
 <body>
@@ -98,7 +98,7 @@
   <div class="logo">A</div>
   <div>
     <div class="header-title">AI Company</div>
-    <div class="header-sub">Autonomous Software Company — Powered by Gemini + GitLab + Firestore</div>
+    <div class="header-sub">Autonomous Software Company — Powered by Gemini + GitLab</div>
   </div>
 </div>
 <div class="main">
@@ -161,7 +161,41 @@ function getDetails(key, d) {
   return ""
 }
 
-function initCards() {
+async function loadProjects() {
+  try {
+    const res = await fetch("/projects")
+    const data = await res.json()
+    const projects = data.projects || []
+    const panel = document.getElementById("projects-panel")
+
+    if (projects.length === 0) {
+      panel.innerHTML = ""
+      return
+    }
+
+    panel.innerHTML = `
+    <div class="projects-panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <h3 style="font-size:15px;color:#1a1a2e">Past Projects</h3>
+        <span style="font-size:12px;color:#888">${projects.length} projects saved</span>
+      </div>
+      <div id="projects-list">
+        ${projects.map(p => `
+        <div class="project-item" onclick="document.getElementById('idea').value='${p.idea || p.project_name}'">
+          <div class="project-dot"></div>
+          <div class="project-name">${p.project_name}</div>
+          <div class="project-meta">${p.timeline_weeks || 0}w · ${p.team_size || 0} people · $${(p.total_cost_usd||0).toLocaleString()}</div>
+          <div class="project-badge">Click to rerun</div>
+        </div>`).join("")}
+      </div>
+    </div>`
+  } catch(e) {
+    console.log("Projects load error:", e)
+  }
+}
+
+initCards()
+loadProjects()
   const grid = document.getElementById("grid")
   grid.innerHTML = AGENTS.map((a,i) => `
     <div class="card" id="card-${a.key}" style="transition-delay:${i*0.08}s">
@@ -211,32 +245,6 @@ function escapeHtml(text) {
 
 function agentInitials(name) {
   return name.split(" ").slice(0,2).map(w=>w[0]).join("")
-}
-
-async function loadProjects() {
-  try {
-    const res = await fetch("/projects")
-    const data = await res.json()
-    const projects = data.projects || []
-    const panel = document.getElementById("projects-panel")
-    if (projects.length === 0) { panel.innerHTML = ""; return }
-    panel.innerHTML = `
-    <div class="projects-panel">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-        <h3 style="font-size:15px;color:#1a1a2e">Past Projects</h3>
-        <span style="font-size:12px;color:#888">${projects.length} saved in Firestore</span>
-      </div>
-      ${projects.map(p => `
-      <div class="project-item" onclick="document.getElementById('idea').value='${(p.idea||p.project_name||'').replace(/'/g,'')}';document.getElementById('idea').focus()">
-        <div class="project-dot"></div>
-        <div class="project-name">${p.project_name||'Unknown'}</div>
-        <div class="project-meta">${p.timeline_weeks||0}w · ${p.team_size||0} people · $${(p.total_cost_usd||0).toLocaleString()}</div>
-        <div class="project-badge">Rerun</div>
-      </div>`).join("")}
-    </div>`
-  } catch(e) {
-    console.log("Projects load error:", e)
-  }
 }
 
 function getActionBtns() {
@@ -360,29 +368,46 @@ async function buildApp() {
     const res = await fetch("/build", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ idea: document.getElementById("idea").value, project_name: currentData.project_name }),
+      body: JSON.stringify({
+        idea: document.getElementById("idea").value,
+        project_name: currentData.project_name
+      }),
       signal: buildAbortController.signal
     })
     const data = await res.json()
     if (data.error) {
-      document.getElementById("code-area").innerHTML = `<div class="code-panel"><p style="color:red">Error: ${data.error}</p></div>`
-      btn.textContent = "Build This App — Generate Code"; btn.style.background = "#0F6E56"; btn.disabled = false; buildAbortController = null
+      document.getElementById("code-area").innerHTML =
+        `<div class="code-panel"><p style="color:red">Error: ${data.error}</p></div>`
+      btn.textContent = "Build This App — Generate Code"
+      btn.style.background = "#0F6E56"
+      btn.disabled = false
+      buildAbortController = null
       return
     }
     currentBuildFiles = data.files || []
     selectedFile = 0
     renderCodePanel(currentBuildFiles)
-    btn.textContent = "Regenerate Code"; btn.style.background = "#0F6E56"; btn.disabled = false; buildAbortController = null
+    btn.textContent = "Regenerate Code"
+    btn.style.background = "#0F6E56"
+    btn.disabled = false
+    buildAbortController = null
     document.getElementById("gitlab-btn").style.display = "block"
     document.getElementById("github-btn").style.display = "block"
     document.getElementById("code-area").scrollIntoView({ behavior: "smooth" })
   } catch(e) {
     if (e.name === "AbortError") {
-      document.getElementById("code-area").innerHTML = `<div class="code-panel"><p style="color:#854F0B;font-size:13px">Generation cancelled.</p></div>`
+      document.getElementById("code-area").innerHTML = `
+        <div class="code-panel">
+          <p style="color:#854F0B;font-size:13px">Generation cancelled. Edit your idea above and try again.</p>
+        </div>`
     } else {
-      document.getElementById("code-area").innerHTML = `<div class="code-panel"><p style="color:red">Error: ${e.message}</p></div>`
+      document.getElementById("code-area").innerHTML =
+        `<div class="code-panel"><p style="color:red">Error: ${e.message}</p></div>`
     }
-    btn.textContent = "Build This App — Generate Code"; btn.style.background = "#0F6E56"; btn.disabled = false; buildAbortController = null
+    btn.textContent = "Build This App — Generate Code"
+    btn.style.background = "#0F6E56"
+    btn.disabled = false
+    buildAbortController = null
   }
 }
 
@@ -391,23 +416,39 @@ async function pushToGitLab() {
   const btn = document.getElementById("gitlab-btn")
   btn.textContent = "Pushing to GitLab..."; btn.disabled = true
   const res = await fetch("/push-gitlab", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ project_name: currentData.project_name, description: currentData.description, files: currentBuildFiles })
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      project_name: currentData.project_name,
+      description: currentData.description,
+      files: currentBuildFiles
+    })
   })
   const data = await res.json()
   if (data.success) {
-    btn.textContent = "Open GitLab Repo"; btn.style.background = "#FC6D26"; btn.disabled = false
+    btn.textContent = "Open GitLab Repo"
+    btn.style.background = "#FC6D26"; btn.disabled = false
     btn.onclick = () => window.open(data.project_url, "_blank")
     document.getElementById("code-area").insertAdjacentHTML("afterbegin", `
-      <div style="background:#FC6D2611;border:1px solid #FC6D2644;border-radius:8px;padding:12px 16px;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;animation:fadeSlideIn 0.5s ease forwards">
+      <div style="background:#FC6D2611;border:1px solid #FC6D2644;border-radius:8px;
+                  padding:12px 16px;margin-bottom:1rem;display:flex;
+                  align-items:center;justify-content:space-between;
+                  animation:fadeSlideIn 0.5s ease forwards">
         <div>
           <div style="font-weight:600;color:#FC6D26;font-size:14px">Pushed to GitLab!</div>
-          <div style="font-size:12px;color:#555;margin-top:2px">${data.files_pushed} files · ${data.issues_created} issues · Sprint 1 milestone</div>
+          <div style="font-size:12px;color:#555;margin-top:2px">
+            ${data.files_pushed} files · ${data.issues_created} issues · Sprint 1 milestone created
+          </div>
         </div>
-        <a href="${data.project_url}" target="_blank" style="padding:8px 16px;background:#FC6D26;color:#fff;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600">Open GitLab</a>
+        <a href="${data.project_url}" target="_blank"
+           style="padding:8px 16px;background:#FC6D26;color:#fff;border-radius:6px;
+                  text-decoration:none;font-size:13px;font-weight:600">
+          Open GitLab
+        </a>
       </div>`)
   } else {
-    btn.textContent = "Push to GitLab"; btn.disabled = false
+    btn.textContent = "Push to GitLab"
+    btn.disabled = false
     alert("GitLab error: " + data.error)
   }
 }
@@ -417,23 +458,37 @@ async function pushToGitHub() {
   const btn = document.getElementById("github-btn")
   btn.textContent = "Pushing to GitHub..."; btn.disabled = true
   const res = await fetch("/push-github", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ project_name: currentData.project_name, description: currentData.description, files: currentBuildFiles })
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      project_name: currentData.project_name,
+      description: currentData.description,
+      files: currentBuildFiles
+    })
   })
   const data = await res.json()
   if (data.success) {
-    btn.textContent = "Open GitHub Repo"; btn.style.background = "#0F6E56"; btn.disabled = false
+    btn.textContent = "Open GitHub Repo"
+    btn.style.background = "#0F6E56"; btn.disabled = false
     btn.onclick = () => window.open(data.repo_url, "_blank")
     document.getElementById("code-area").insertAdjacentHTML("afterbegin", `
-      <div style="background:#0F6E5611;border:1px solid #0F6E5644;border-radius:8px;padding:12px 16px;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;animation:fadeSlideIn 0.5s ease forwards">
+      <div style="background:#0F6E5611;border:1px solid #0F6E5644;border-radius:8px;
+                  padding:12px 16px;margin-bottom:1rem;display:flex;
+                  align-items:center;justify-content:space-between;
+                  animation:fadeSlideIn 0.5s ease forwards">
         <div>
           <div style="font-weight:600;color:#0F6E56;font-size:14px">Pushed to GitHub!</div>
-          <div style="font-size:12px;color:#555;margin-top:2px">${data.files_pushed} files · ${data.issues_created} issues</div>
+          <div style="font-size:12px;color:#555;margin-top:2px">${data.files_pushed} files · ${data.issues_created} issues created</div>
         </div>
-        <a href="${data.repo_url}" target="_blank" style="padding:8px 16px;background:#0F6E56;color:#fff;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600">Open Repo</a>
+        <a href="${data.repo_url}" target="_blank"
+           style="padding:8px 16px;background:#0F6E56;color:#fff;border-radius:6px;
+                  text-decoration:none;font-size:13px;font-weight:600">
+          Open Repo
+        </a>
       </div>`)
   } else {
-    btn.textContent = "Push to GitHub"; btn.disabled = false
+    btn.textContent = "Push to GitHub"
+    btn.disabled = false
     alert("GitHub error: " + data.error)
   }
 }
@@ -449,15 +504,19 @@ async function runMeeting() {
         <h3 style="font-size:15px;color:#1a1a2e;margin:0">Team Meeting — Live Discussion</h3>
       </div>
       <div class="typing"><span></span><span></span><span></span></div>
+      <p style="font-size:13px;color:#888;margin-top:8px">Agents are discussing the project...</p>
     </div>`
   const res = await fetch("/meeting", {
-    method: "POST", headers: { "Content-Type": "application/json" },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ project_name: currentData.project_name, plan: currentData })
   })
   const data = await res.json()
   if (data.error) {
-    document.getElementById("meeting-area").innerHTML = `<div class="meeting-panel"><p style="color:red">Error: ${data.error}</p></div>`
-    btn.textContent = "Run Team Meeting"; btn.disabled = false; return
+    document.getElementById("meeting-area").innerHTML =
+      `<div class="meeting-panel"><p style="color:red">Error: ${data.error}</p></div>`
+    btn.textContent = "Run Team Meeting"; btn.disabled = false
+    return
   }
   const messages = data.messages || []
   document.getElementById("meeting-area").innerHTML = `
@@ -506,7 +565,8 @@ async function launch() {
   }
   setProgress(50)
   const res = await fetch("/run", {
-    method: "POST", headers: { "Content-Type": "application/json" },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ idea })
   })
   currentData = await res.json()
@@ -517,16 +577,11 @@ async function launch() {
     setProgress(60 + ((i+1)/AGENTS.length)*38)
   }
   setProgress(100)
-  setTimeout(() => {
-    renderResult(currentData)
-    setProgress(0)
-    loadProjects()
-  }, 300)
+  setTimeout(() => { renderResult(currentData); setProgress(0) }, 300)
   btn.disabled = false; btn.textContent = "Launch"
 }
 
 initCards()
-loadProjects()
 </script>
 </body>
 </html>
