@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AI Company</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui; background: #f5f5f3; }
+    .header { background: #1a1a2e; padding: 1.2rem 2rem; display: flex; align-items: center; gap: 12px; }
+    .logo { width: 36px; height: 36px; border-radius: 50%; background: #534AB7; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 16px; }
+    .header-title { color: #fff; font-weight: 600; font-size: 18px; }
+    .header-sub { color: #888; font-size: 12px; }
+    .main { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    .input-box { background: #fff; border-radius: 12px; border: 1px solid #e5e5e5; padding: 1.2rem; margin-bottom: 1.5rem; }
+    .input-row { display: flex; gap: 8px; }
+    .top-bar { display: flex; align-items: center; margin-bottom: 10px; }
+    input { flex: 1; padding: 10px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #ddd; outline: none; }
+    .launch-btn { padding: 10px 24px; background: #534AB7; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
+    .launch-btn:disabled { background: #aaa; cursor: not-allowed; }
+    .grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 1.5rem; }
+    .card { background: #fff; border-radius: 12px; padding: 1rem; border: 1px solid #e5e5e5; transition: all 0.3s; opacity: 0.4; transform: translateY(8px); }
+    .card.awake { opacity: 1; transform: translateY(0); }
+    .card.active { border-color: #534AB7; box-shadow: 0 0 0 3px #534AB722; transform: translateY(-2px) scale(1.02); opacity: 1; }
+    .card.done { opacity: 1; transform: translateY(0); border-left: 3px solid; }
+    .card-details { font-size: 12px; color: #444; line-height: 1.7; min-height: 40px; }
+    .card-details.reveal { animation: fadeSlideIn 0.5s ease forwards; }
+    @keyframes fadeSlideIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: #ddd; flex-shrink: 0; transition: background 0.3s; }
+    .dot.thinking { background: #534AB7; animation: pulse 0.8s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{ opacity:1; transform:scale(1) } 50%{ opacity:0.5; transform:scale(1.5) } }
+    .typing { display: flex; align-items: center; gap: 5px; padding: 6px 0; }
+    .typing span { width: 7px; height: 7px; border-radius: 50%; background: #534AB7; opacity: 0.3; animation: bounce 1.2s infinite; }
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce { 0%,60%,100%{ transform:translateY(0); opacity:0.3 } 30%{ transform:translateY(-6px); opacity:1 } }
+    .card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .card-label { font-weight: 600; font-size: 13px; }
+    .card-status { margin-left: auto; font-size: 11px; color: #aaa; }
+    .card-role { font-size: 11px; color: #888; margin-bottom: 8px; }
+    .summary { background: #1a1a2e; border-radius: 12px; padding: 1.5rem; color: #fff; margin-bottom: 1rem; animation: fadeSlideIn 0.6s ease forwards; }
+    .metrics { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 1rem; }
+    .metric { background: #ffffff11; border-radius: 8px; padding: 12px; }
+    .metric-label { font-size: 11px; color: #888; margin-bottom: 4px; }
+    .metric-value { font-size: 22px; font-weight: 700; }
+    .risk-item { font-size: 13px; color: #ccc; margin-bottom: 4px; }
+    .ceo-toggle { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+    .ceo-label { font-size: 13px; color: #555; font-weight: 500; }
+    .toggle { position: relative; width: 40px; height: 22px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; inset: 0; background: #ddd; border-radius: 22px; transition: 0.3s; }
+    .slider:before { content:""; position:absolute; width:16px; height:16px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:0.3s; }
+    input:checked + .slider { background: #534AB7; }
+    input:checked + .slider:before { transform: translateX(18px); }
+    .ceo-pitch { background: #fff; border-radius: 12px; border: 1px solid #e5e5e5; padding: 2rem; margin-bottom: 1rem; animation: fadeSlideIn 0.6s ease forwards; }
+    .pitch-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #f0f0f0; }
+    .pitch-title { font-size: 22px; font-weight: 700; color: #1a1a2e; }
+    .pitch-badge { background: #534AB711; color: #534AB7; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .pitch-section { margin-bottom: 1.2rem; }
+    .pitch-section h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: #aaa; margin-bottom: 8px; }
+    .pitch-metrics { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 1.5rem; }
+    .pitch-metric { text-align: center; background: #f8f8f6; border-radius: 10px; padding: 1rem; }
+    .pitch-metric-val { font-size: 22px; font-weight: 700; color: #534AB7; }
+    .pitch-metric-lbl { font-size: 11px; color: #888; margin-top: 4px; }
+    .tag { display: inline-block; background: #534AB711; color: #534AB7; border-radius: 6px; padding: 3px 10px; font-size: 12px; margin: 2px; }
+    .tag-red { background: #FF4B4B11; color: #cc2200; }
+    .tag-green { background: #0F6E5611; color: #0F6E56; }
+    .progress-bar { height: 3px; background: #f0f0f0; border-radius: 3px; margin-bottom: 1.5rem; overflow: hidden; }
+    .progress-fill { height: 100%; background: #534AB7; border-radius: 3px; width: 0%; transition: width 0.4s ease; }
+    .action-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 1.2rem; }
+    .btn-build { padding: 12px 28px; background: #0F6E56; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; width: 100%; transition: background 0.2s; }
+    .btn-github { padding: 12px 28px; background: #1a1a2e; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; width: 100%; display: none; }
+    .btn-meeting { padding: 12px 28px; background: #185FA5; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; width: 100%; }
+    .btn-meeting:disabled { background: #aaa; cursor: not-allowed; }
+    .code-panel { background: #fff; border-radius: 12px; border: 1px solid #e5e5e5; padding: 1.5rem; margin-top: 1rem; animation: fadeSlideIn 0.5s ease forwards; }
+    .file-tab { padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; margin-bottom: 4px; border-left: 2px solid transparent; transition: all 0.2s; }
+    .file-tab.active { background: #534AB711; color: #534AB7; border-left-color: #534AB7; }
+    .meeting-panel { background: #fff; border-radius: 12px; border: 1px solid #e5e5e5; padding: 1.5rem; margin-top: 1rem; animation: fadeSlideIn 0.5s ease forwards; }
+    .chat-msg { display: flex; gap: 10px; margin-bottom: 12px; animation: fadeSlideIn 0.4s ease forwards; }
+    .chat-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; color: #fff; }
+    .chat-bubble { flex: 1; padding: 8px 12px; border-radius: 0 10px 10px 10px; font-size: 13px; line-height: 1.5; }
+    .bubble-normal   { background: #f5f5f3; color: #333; }
+    .bubble-concern  { background: #FFF3CD; color: #856404; border-left: 3px solid #FFC107; }
+    .bubble-warning  { background: #FFEBEE; color: #C62828; border-left: 3px solid #EF5350; }
+    .bubble-decision { background: #E8F5E9; color: #1B5E20; border-left: 3px solid #4CAF50; }
+    .chat-name { font-size: 11px; font-weight: 600; margin-bottom: 3px; }
+  </style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">A</div>
+  <div>
+    <div class="header-title">AI Company</div>
+    <div class="header-sub">Autonomous Software Company</div>
+  </div>
+</div>
+<div class="main">
+  <div class="input-box">
+    <div class="top-bar">
+      <span style="font-weight:600;font-size:15px">Describe your project idea</span>
+      <div class="ceo-toggle">
+        <span class="ceo-label">CEO Mode</span>
+        <label class="toggle">
+          <input type="checkbox" id="ceo-toggle" onchange="toggleCEO()">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+    <div class="input-row">
+      <input id="idea" placeholder="e.g. Build a food delivery app..."
+        onkeydown="if(event.key==='Enter')launch()"/>
+      <button class="launch-btn" id="btn" onclick="launch()">Launch</button>
+    </div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+  <div class="grid" id="grid"></div>
+  <div id="result-area"></div>
+  <div id="meeting-area"></div>
+  <div id="code-area"></div>
+</div>
+<script>
+const AGENTS = [
+  { key:"pm",        label:"PM Agent",        role:"Requirements",   color:"#534AB7" },
+  { key:"architect", label:"Architect Agent",  role:"System Design",  color:"#0F6E56" },
+  { key:"dev",       label:"Dev Agent",        role:"Development",    color:"#185FA5" },
+  { key:"qa",        label:"QA Agent",         role:"Testing",        color:"#854F0B" },
+  { key:"devops",    label:"DevOps Agent",     role:"Infrastructure", color:"#993C1D" },
+  { key:"marketing", label:"Marketing Agent",  role:"Go-to-Market",   color:"#993556" },
+]
+const AGENT_COLORS = {
+  "PM Agent":"#534AB7","Architect Agent":"#0F6E56","Dev Agent":"#185FA5",
+  "QA Agent":"#854F0B","DevOps Agent":"#993C1D","Marketing Agent":"#993556"
+}
+let currentData = null
+let currentBuildFiles = null
+let ceoMode = false
+let selectedFile = 0
+let buildAbortController = null
+
+function toggleCEO() {
+  ceoMode = document.getElementById("ceo-toggle").checked
+  if (currentData) renderResult(currentData)
+}
+
+function getDetails(key, d) {
+  if (!d) return ""
+  if (key==="pm") return (d.priorities||[]).slice(0,2).map(p=>`<div>• ${p}</div>`).join("")
+  if (key==="architect") return `<div>Frontend: ${d.frontend}</div><div>Backend: ${d.backend}</div><div>DB: ${d.database}</div>`
+  if (key==="dev") return `<div>Est. hours: <b>${d.estimated_hours}h</b></div><div>Complexity: <b>${d.complexity}</b></div><div>Modules: ${(d.modules||[]).length}</div>`
+  if (key==="qa") return (d.risk_areas||[]).slice(0,2).map(r=>`<div>• ${r}</div>`).join("")
+  if (key==="devops") return `<div>${d.infrastructure}</div><div style="color:#0F6E56;font-weight:600;margin-top:4px">$${d.monthly_cost_usd}/mo</div>`
+  if (key==="marketing") return (d.channels||[]).slice(0,2).map(c=>`<div>• ${c}</div>`).join("")
+  return ""
+}
+
+function initCards() {
+  const grid = document.getElementById("grid")
+  grid.innerHTML = AGENTS.map((a,i) => `
+    <div class="card" id="card-${a.key}" style="transition-delay:${i*0.08}s">
+      <div class="card-header">
+        <div class="dot" id="dot-${a.key}"></div>
+        <span class="card-label">${a.label}</span>
+        <span class="card-status" id="status-${a.key}">Idle</span>
+      </div>
+      <div class="card-role">${a.role}</div>
+      <div class="card-details" id="details-${a.key}"></div>
+    </div>`).join("")
+  setTimeout(() => AGENTS.forEach(a =>
+    document.getElementById("card-"+a.key).classList.add("awake")), 50)
+}
+
+function setActive(key) {
+  const a = AGENTS.find(x => x.key===key)
+  document.getElementById("card-"+key).classList.add("active")
+  document.getElementById("dot-"+key).classList.add("thinking")
+  document.getElementById("status-"+key).textContent = "Thinking..."
+  document.getElementById("status-"+key).style.color = a.color
+  document.getElementById("details-"+key).innerHTML =
+    `<div class="typing"><span></span><span></span><span></span></div>`
+}
+
+function setDone(key, data) {
+  const a = AGENTS.find(x => x.key===key)
+  const card = document.getElementById("card-"+key)
+  const dot  = document.getElementById("dot-"+key)
+  const details = document.getElementById("details-"+key)
+  card.classList.remove("active"); card.classList.add("done")
+  card.style.borderLeftColor = a.color
+  dot.classList.remove("thinking"); dot.style.background = a.color
+  document.getElementById("status-"+key).textContent = "Done"
+  document.getElementById("status-"+key).style.color = a.color
+  details.innerHTML = getDetails(key, data)
+  details.classList.remove("reveal"); void details.offsetWidth; details.classList.add("reveal")
+}
+
+function setProgress(pct) {
+  document.getElementById("progress").style.width = pct + "%"
+}
+
+function escapeHtml(text) {
+  return text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+}
+
+function agentInitials(name) {
+  return name.split(" ").slice(0,2).map(w=>w[0]).join("")
+}
+
+function getActionBtns() {
+  return `
+  <div class="action-btns">
+    <button class="btn-build" id="build-btn" onclick="buildApp()">Build This App — Generate Code</button>
+    <button class="btn-github" id="github-btn" onclick="pushToGitHub()">Push to GitHub</button>
+    <button class="btn-meeting" id="meeting-btn" onclick="runMeeting()">Run Team Meeting</button>
+  </div>`
+}
+
+function renderResult(data) {
+  const area = document.getElementById("result-area")
+  if (ceoMode) {
+    const d = data.departments
+    area.innerHTML = `
+    <div class="ceo-pitch">
+      <div class="pitch-header">
+        <div>
+          <div class="pitch-title">${data.project_name}</div>
+          <div style="color:#888;font-size:13px;margin-top:4px">${data.description}</div>
+        </div>
+        <span class="pitch-badge">CEO Mode</span>
+      </div>
+      <div class="pitch-metrics">
+        <div class="pitch-metric"><div class="pitch-metric-val">${data.timeline_weeks}w</div><div class="pitch-metric-lbl">Timeline</div></div>
+        <div class="pitch-metric"><div class="pitch-metric-val">${data.team_size}</div><div class="pitch-metric-lbl">Team size</div></div>
+        <div class="pitch-metric"><div class="pitch-metric-val">$${(data.total_cost_usd/1000).toFixed(0)}k</div><div class="pitch-metric-lbl">Investment</div></div>
+        <div class="pitch-metric"><div class="pitch-metric-val">$${d?.devops?.monthly_cost_usd||0}</div><div class="pitch-metric-lbl">Infra/mo</div></div>
+      </div>
+      <div class="pitch-section"><h3>Tech stack</h3>${(d?.dev?.tech_stack||[]).map(t=>`<span class="tag">${t}</span>`).join("")}</div>
+      <div class="pitch-section"><h3>Target audience</h3><p style="font-size:14px;color:#333">${d?.marketing?.target_audience||""}</p></div>
+      <div class="pitch-section"><h3>Go-to-market</h3>${(d?.marketing?.gtm_phases||[]).map(p=>`<div style="font-size:13px;color:#444;margin-bottom:4px">• ${p.replace(/^Phase \d+:\s*/i,"")}</div>`).join("")}</div>
+      <div class="pitch-section"><h3>Risks</h3>${(data.top_risks||[]).map(r=>`<span class="tag tag-red">⚠ ${r}</span>`).join("")}</div>
+      <div class="pitch-section"><h3>KPIs</h3>${(d?.marketing?.kpis||[]).map(k=>`<span class="tag tag-green">${k}</span>`).join("")}</div>
+      <div class="pitch-section"><h3>Sprint plan</h3>${(d?.pm?.sprints||[]).map(s=>`<div style="font-size:13px;color:#444;margin-bottom:4px">• ${s.replace(/^Sprint \d+:\s*/i,"")}</div>`).join("")}</div>
+      ${getActionBtns()}
+    </div>`
+  } else {
+    area.innerHTML = `
+    <div class="summary">
+      <h2 style="font-size:16px;margin-bottom:1rem">${data.project_name} — Executive Summary</h2>
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Timeline</div><div class="metric-value">${data.timeline_weeks} weeks</div></div>
+        <div class="metric"><div class="metric-label">Team size</div><div class="metric-value">${data.team_size} people</div></div>
+        <div class="metric"><div class="metric-label">Est. cost</div><div class="metric-value">$${data.total_cost_usd?.toLocaleString()}</div></div>
+      </div>
+      <div style="font-size:12px;color:#888;margin-bottom:6px">Top risks</div>
+      ${(data.top_risks||[]).map(r=>`<div class="risk-item">• ${r}</div>`).join("")}
+      ${getActionBtns()}
+    </div>`
+  }
+  const githubBtn = document.getElementById("github-btn")
+  if (currentBuildFiles && githubBtn) githubBtn.style.display = "block"
+}
+
+function renderCodePanel(files) {
+  const area = document.getElementById("code-area")
+  function render() {
+    area.innerHTML = `
+    <div class="code-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <h3 style="font-size:15px;color:#1a1a2e">${currentData.project_name} — Generated Code</h3>
+        <span style="font-size:12px;color:#888">${files.length} files generated</span>
+      </div>
+      <div style="display:flex;gap:16px">
+        <div style="width:200px;flex-shrink:0">
+          ${files.map((f,i)=>`
+          <div class="file-tab ${i===selectedFile?'active':''}" onclick="selectFile(${i})">
+            <div style="font-weight:500">${f.filename.split("/").pop()}</div>
+            <div style="font-size:10px;color:#aaa">${f.filename}</div>
+          </div>`).join("")}
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+            <span style="font-size:12px;font-weight:600;color:#534AB7">${files[selectedFile].filename}</span>
+            <span style="font-size:11px;color:#888">${files[selectedFile].language}</span>
+          </div>
+          <pre style="background:#1a1a2e;color:#e0e0e0;padding:1rem;border-radius:8px;overflow:auto;font-size:12px;max-height:420px;line-height:1.6;white-space:pre-wrap">${escapeHtml(files[selectedFile].content)}</pre>
+        </div>
+      </div>
+    </div>`
+  }
+  window.selectFile = function(i) { selectedFile = i; render() }
+  render()
+}
+
+async function buildApp() {
+  if (!currentData) return
+
+  if (buildAbortController) {
+    buildAbortController.abort()
+    buildAbortController = null
+    const btn = document.getElementById("build-btn")
+    btn.textContent = "Build This App — Generate Code"
+    btn.style.background = "#0F6E56"
+    btn.disabled = false
+    document.getElementById("code-area").innerHTML = `
+      <div class="code-panel">
+        <p style="color:#854F0B;font-size:13px">Generation cancelled. Edit your idea above and try again.</p>
+      </div>`
+    return
+  }
+
+  buildAbortController = new AbortController()
+  const btn = document.getElementById("build-btn")
+  btn.textContent = "Abort Generation"
+  btn.style.background = "#993C1D"
+  btn.disabled = false
+
+  document.getElementById("code-area").innerHTML = `
+    <div class="code-panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <h3 style="font-size:15px;color:#1a1a2e">Generating codebase...</h3>
+        <span style="font-size:12px;color:#888">5 files — takes ~2 mins</span>
+      </div>
+      <div class="typing"><span></span><span></span><span></span></div>
+      <p style="font-size:13px;color:#888;margin-top:8px">Gemini is writing your code files... Click "Abort Generation" to cancel and rewrite your prompt.</p>
+    </div>`
+
+  try {
+    const res = await fetch("/build", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        idea: document.getElementById("idea").value,
+        project_name: currentData.project_name
+      }),
+      signal: buildAbortController.signal
+    })
+    const data = await res.json()
+    if (data.error) {
+      document.getElementById("code-area").innerHTML =
+        `<div class="code-panel"><p style="color:red">Error: ${data.error}</p></div>`
+      btn.textContent = "Build This App — Generate Code"
+      btn.style.background = "#0F6E56"
+      btn.disabled = false
+      buildAbortController = null
+      return
+    }
+    currentBuildFiles = data.files || []
+    selectedFile = 0
+    renderCodePanel(currentBuildFiles)
+    btn.textContent = "Regenerate Code"
+    btn.style.background = "#0F6E56"
+    btn.disabled = false
+    buildAbortController = null
+    const githubBtn = document.getElementById("github-btn")
+    if (githubBtn) githubBtn.style.display = "block"
+    document.getElementById("code-area").scrollIntoView({ behavior: "smooth" })
+  } catch(e) {
+    if (e.name === "AbortError") {
+      document.getElementById("code-area").innerHTML = `
+        <div class="code-panel">
+          <p style="color:#854F0B;font-size:13px">Generation cancelled. Edit your idea above and try again.</p>
+        </div>`
+    } else {
+      document.getElementById("code-area").innerHTML =
+        `<div class="code-panel"><p style="color:red">Error: ${e.message}</p></div>`
+    }
+    btn.textContent = "Build This App — Generate Code"
+    btn.style.background = "#0F6E56"
+    btn.disabled = false
+    buildAbortController = null
+  }
+}
+
+async function pushToGitHub() {
+  if (!currentData || !currentBuildFiles) return
+  const btn = document.getElementById("github-btn")
+  btn.textContent = "Pushing to GitHub..."; btn.disabled = true
+  const res = await fetch("/push-github", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      project_name: currentData.project_name,
+      description: currentData.description,
+      files: currentBuildFiles
+    })
+  })
+  const data = await res.json()
+  if (data.success) {
+    btn.textContent = "Open GitHub Repo"
+    btn.style.background = "#0F6E56"; btn.disabled = false
+    btn.onclick = () => window.open(data.repo_url, "_blank")
+    document.getElementById("code-area").insertAdjacentHTML("afterbegin", `
+      <div style="background:#0F6E5611;border:1px solid #0F6E5644;border-radius:8px;padding:12px 16px;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;animation:fadeSlideIn 0.5s ease forwards">
+        <div>
+          <div style="font-weight:600;color:#0F6E56;font-size:14px">Pushed to GitHub!</div>
+          <div style="font-size:12px;color:#555;margin-top:2px">${data.files_pushed} files · ${data.issues_created} issues created</div>
+        </div>
+        <a href="${data.repo_url}" target="_blank" style="padding:8px 16px;background:#0F6E56;color:#fff;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600">Open Repo</a>
+      </div>`)
+  } else {
+    btn.textContent = "Push to GitHub"; btn.disabled = false
+    alert("GitHub error: " + data.error)
+  }
+}
+
+async function runMeeting() {
+  if (!currentData) return
+  const btn = document.getElementById("meeting-btn")
+  btn.textContent = "Agents are meeting..."; btn.disabled = true
+  document.getElementById("meeting-area").innerHTML = `
+    <div class="meeting-panel">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem">
+        <div style="width:8px;height:8px;border-radius:50%;background:#185FA5;animation:pulse 0.8s infinite"></div>
+        <h3 style="font-size:15px;color:#1a1a2e;margin:0">Team Meeting — Live Discussion</h3>
+      </div>
+      <div class="typing"><span></span><span></span><span></span></div>
+      <p style="font-size:13px;color:#888;margin-top:8px">Agents are discussing the project...</p>
+    </div>`
+  const res = await fetch("/meeting", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ project_name: currentData.project_name, plan: currentData })
+  })
+  const data = await res.json()
+  if (data.error) {
+    document.getElementById("meeting-area").innerHTML =
+      `<div class="meeting-panel"><p style="color:red">Error: ${data.error}</p></div>`
+    btn.textContent = "Run Team Meeting"; btn.disabled = false
+    return
+  }
+  const messages = data.messages || []
+  document.getElementById("meeting-area").innerHTML = `
+    <div class="meeting-panel">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.2rem">
+        <div style="width:8px;height:8px;border-radius:50%;background:#185FA5"></div>
+        <h3 style="font-size:15px;color:#1a1a2e;margin:0">Team Meeting — Live Discussion</h3>
+        <span style="margin-left:auto;font-size:11px;color:#888">${currentData.project_name}</span>
+      </div>
+      <div id="chat-log"></div>
+    </div>`
+  const log = document.getElementById("chat-log")
+  for (let i = 0; i < messages.length; i++) {
+    await new Promise(r => setTimeout(r, 800))
+    const msg = messages[i]
+    const color = AGENT_COLORS[msg.agent] || "#534AB7"
+    const bubbleClass = "bubble-" + (msg.type || "normal")
+    const msgEl = document.createElement("div")
+    msgEl.className = "chat-msg"
+    msgEl.innerHTML = `
+      <div class="chat-avatar" style="background:${color}">${agentInitials(msg.agent)}</div>
+      <div style="flex:1">
+        <div class="chat-name" style="color:${color}">${msg.agent}</div>
+        <div class="chat-bubble ${bubbleClass}">${msg.message}</div>
+      </div>`
+    log.appendChild(msgEl)
+    msgEl.scrollIntoView({ behavior:"smooth", block:"nearest" })
+  }
+  btn.textContent = "Re-run Meeting"; btn.disabled = false
+}
+
+async function launch() {
+  const idea = document.getElementById("idea").value.trim()
+  if (!idea) return
+  const btn = document.getElementById("btn")
+  btn.disabled = true; btn.textContent = "Running..."
+  currentData = null; currentBuildFiles = null; buildAbortController = null
+  document.getElementById("result-area").innerHTML = ""
+  document.getElementById("meeting-area").innerHTML = ""
+  document.getElementById("code-area").innerHTML = ""
+  setProgress(5); initCards()
+  for (let i = 0; i < AGENTS.length; i++) {
+    await new Promise(r => setTimeout(r, 400))
+    setActive(AGENTS[i].key)
+    setProgress(5 + ((i+1)/AGENTS.length)*40)
+  }
+  setProgress(50)
+  const res = await fetch("/run", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ idea })
+  })
+  currentData = await res.json()
+  setProgress(60)
+  for (let i = 0; i < AGENTS.length; i++) {
+    await new Promise(r => setTimeout(r, 180))
+    setDone(AGENTS[i].key, currentData.departments[AGENTS[i].key])
+    setProgress(60 + ((i+1)/AGENTS.length)*38)
+  }
+  setProgress(100)
+  setTimeout(() => { renderResult(currentData); setProgress(0) }, 300)
+  btn.disabled = false; btn.textContent = "Launch"
+}
+
+initCards()
+</script>
+</body>
+</html>
+
