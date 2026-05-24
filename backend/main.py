@@ -33,9 +33,10 @@ client = genai.Client(api_key=GOOGLE_API_KEY)
 # MongoDB client
 from pymongo import MongoClient
 try:
+    import certifi
     mongo_client = MongoClient(
         MONGODB_URI,
-        tlsAllowInvalidCertificates=True,
+        tlsCAFile=certifi.where(),
         serverSelectionTimeoutMS=10000,
         connectTimeoutMS=10000,
         socketTimeoutMS=10000

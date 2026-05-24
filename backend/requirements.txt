@@ -7,3 +7,4 @@ pymongo[srv]==4.6.0
 dnspython
 arize[pandas]
 pandas
+certifi
