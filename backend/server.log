@@ -1,12 +1,12 @@
 nohup: ignoring input
-INFO:     Started server process [3135]
+INFO:     Started server process [4191]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
-Google key loaded: AIzaSyAl9j...
+Google key loaded: AIzaSyAXRu...
 GitLab user: suryahackathon-cyber
 MongoDB: Connected
 Arize: Connected
-MongoDB connection failed (non-critical): SSL handshake failed: ac-nb4ppyx-shard-00-02.yxldqgz.mongodb.net:27017: [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1000) (configured timeouts: socketTimeoutMS: 10000.0ms, connectTimeoutMS: 10000.0ms),SSL handshake failed: ac-nb4ppyx-shard-00-01.yxldqgz.mongodb.net:27017: [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1000) (configured timeouts: socketTimeoutMS: 10000.0ms, connectTimeoutMS: 10000.0ms),SSL handshake failed: ac-nb4ppyx-shard-00-00.yxldqgz.mongodb.net:27017: [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1000) (configured timeouts: socketTimeoutMS: 10000.0ms, connectTimeoutMS: 10000.0ms), Timeout: 10.0s, Topology Description: <TopologyDescription id: 6a12b7d0255fe7b911edb039, topology_type: ReplicaSetNoPrimary, servers: [<ServerDescription ('ac-nb4ppyx-shard-00-00.yxldqgz.mongodb.net', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('SSL handshake failed: ac-nb4ppyx-shard-00-00.yxldqgz.mongodb.net:27017: [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1000) (configured timeouts: socketTimeoutMS: 10000.0ms, connectTimeoutMS: 10000.0ms)')>, <ServerDescription ('ac-nb4ppyx-shard-00-01.yxldqgz.mongodb.net', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('SSL handshake failed: ac-nb4ppyx-shard-00-01.yxldqgz.mongodb.net:27017: [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1000) (configured timeouts: socketTimeoutMS: 10000.0ms, connectTimeoutMS: 10000.0ms)')>, <ServerDescription ('ac-nb4ppyx-shard-00-02.yxldqgz.mongodb.net', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('SSL handshake failed: ac-nb4ppyx-shard-00-02.yxldqgz.mongodb.net:27017: [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1000) (configured timeouts: socketTimeoutMS: 10000.0ms, connectTimeoutMS: 10000.0ms)')>]>
+MongoDB motor client created!
 Arize ready!
-INFO:     127.0.0.1:57998 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43074 - "GET /health HTTP/1.1" 200 OK

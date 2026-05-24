@@ -31,10 +31,10 @@ print(f"Arize: Connected" if ARIZE_API_KEY else "ERROR: No Arize key!")
 client = genai.Client(api_key=GOOGLE_API_KEY)
 
 # MongoDB client
-from pymongo import MongoClient
+from motor.motor_asyncio import AsyncIOMotorClient
 try:
     import certifi
-    mongo_client = MongoClient(
+    mongo_client = AsyncIOMotorClient(
         MONGODB_URI,
         tlsCAFile=certifi.where(),
         serverSelectionTimeoutMS=10000,
@@ -43,8 +43,7 @@ try:
     )
     db = mongo_client["ai_company"]
     projects_collection = db["projects"]
-    mongo_client.admin.command("ping")
-    print("MongoDB connected successfully!")
+    print("MongoDB motor client created!")
     MONGODB_ENABLED = True
 except Exception as me:
     print(f"MongoDB connection failed (non-critical): {me}")
@@ -167,7 +166,7 @@ def log_to_arize(model_id, prompt, response_text, latency_ms, tokens=0):
     except Exception as e:
         print(f"Arize logging error (non-critical): {e}")
 
-def save_to_mongodb(project_name, idea, result):
+async def save_to_mongodb(project_name, idea, result):
     if not MONGODB_ENABLED or projects_collection is None:
         print("MongoDB disabled — skipping save")
         return
@@ -179,7 +178,7 @@ def save_to_mongodb(project_name, idea, result):
             "created_at": datetime.utcnow(),
             "timestamp": int(time.time())
         }
-        projects_collection.insert_one(doc)
+        await projects_collection.insert_one(doc)
         print(f"Saved to MongoDB: {project_name}")
     except Exception as e:
         print(f"MongoDB save error (non-critical): {e}")
@@ -192,7 +191,7 @@ async def run_company(req: ProjectRequest):
         latency = int((time.time() - start) * 1000)
         text = clean_json(response.text)
         result = json.loads(text)
-        save_to_mongodb(result.get("project_name", "Unknown"), req.idea, result)
+        await save_to_mongodb(result.get("project_name", "Unknown"), req.idea, result)
         log_to_arize("orchestrator-agent", req.idea, response.text, latency)
         return result
     except Exception as e:
@@ -457,11 +456,12 @@ async def get_projects():
     if not MONGODB_ENABLED or projects_collection is None:
         return {"projects": [], "message": "MongoDB not available"}
     try:
-        projects = list(projects_collection.find(
+        cursor = projects_collection.find(
             {},
             {"_id": 0, "project_name": 1, "idea": 1, "created_at": 1,
              "result.timeline_weeks": 1, "result.team_size": 1, "result.total_cost_usd": 1}
-        ).sort("created_at", -1).limit(10))
+        ).sort("created_at", -1).limit(10)
+        projects = await cursor.to_list(length=10)
         for p in projects:
             if "created_at" in p:
                 p["created_at"] = p["created_at"].strftime("%Y-%m-%d %H:%M")
