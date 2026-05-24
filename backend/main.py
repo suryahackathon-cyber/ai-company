@@ -32,10 +32,22 @@ client = genai.Client(api_key=GOOGLE_API_KEY)
 
 # MongoDB client
 from pymongo import MongoClient
-mongo_client = MongoClient(MONGODB_URI)
-db = mongo_client["ai_company"]
-projects_collection = db["projects"]
-print("MongoDB connected successfully!")
+try:
+    mongo_client = MongoClient(
+        MONGODB_URI,
+        tls=True,
+        tlsAllowInvalidCertificates=True,
+        serverSelectionTimeoutMS=5000
+    )
+    db = mongo_client["ai_company"]
+    projects_collection = db["projects"]
+    mongo_client.admin.command("ping")
+    print("MongoDB connected successfully!")
+    MONGODB_ENABLED = True
+except Exception as me:
+    print(f"MongoDB connection failed (non-critical): {me}")
+    projects_collection = None
+    MONGODB_ENABLED = False
 
 # Arize client
 # arize imported below
@@ -153,6 +165,9 @@ def log_to_arize(model_id, prompt, response_text, latency_ms, tokens=0):
         print(f"Arize logging error (non-critical): {e}")
 
 def save_to_mongodb(project_name, idea, result):
+    if not MONGODB_ENABLED or projects_collection is None:
+        print("MongoDB disabled — skipping save")
+        return
     try:
         doc = {
             "project_name": project_name,
@@ -164,7 +179,7 @@ def save_to_mongodb(project_name, idea, result):
         projects_collection.insert_one(doc)
         print(f"Saved to MongoDB: {project_name}")
     except Exception as e:
-        print(f"MongoDB save error: {e}")
+        print(f"MongoDB save error (non-critical): {e}")
 
 @app.post("/run")
 async def run_company(req: ProjectRequest):
@@ -436,6 +451,8 @@ async def push_to_gitlab(req: GitLabRequest):
 
 @app.get("/projects")
 async def get_projects():
+    if not MONGODB_ENABLED or projects_collection is None:
+        return {"projects": [], "message": "MongoDB not available"}
     try:
         projects = list(projects_collection.find(
             {},
