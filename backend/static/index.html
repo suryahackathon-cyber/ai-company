@@ -213,11 +213,23 @@ function agentInitials(name) {
   return name.split(" ").slice(0,2).map(w=>w[0]).join("")
 }
 
+let savedProjects = []
+
+function rerunProject(index) {
+  const p = savedProjects[index]
+  if (!p) return
+  const idea = p.idea || p.project_name || ""
+  document.getElementById("idea").value = idea
+  document.getElementById("idea").focus()
+  window.scrollTo({ top: 0, behavior: "smooth" })
+}
+
 async function loadProjects() {
   try {
     const res = await fetch("/projects")
     const data = await res.json()
     const projects = data.projects || []
+    savedProjects = projects
     const panel = document.getElementById("projects-panel")
     if (projects.length === 0) { panel.innerHTML = ""; return }
     panel.innerHTML = `
@@ -226,8 +238,8 @@ async function loadProjects() {
         <h3 style="font-size:15px;color:#1a1a2e">Past Projects</h3>
         <span style="font-size:12px;color:#888">${projects.length} saved in Firestore</span>
       </div>
-      ${projects.map(p => `
-      <div class="project-item" onclick="document.getElementById('idea').value='${(p.idea||p.project_name||'').replace(/'/g,'')}';document.getElementById('idea').focus()">
+      ${projects.map((p,i) => `
+      <div class="project-item" onclick="rerunProject(${i})">
         <div class="project-dot"></div>
         <div class="project-name">${p.project_name||'Unknown'}</div>
         <div class="project-meta">${p.timeline_weeks||0}w · ${p.team_size||0} people · $${(p.total_cost_usd||0).toLocaleString()}</div>
@@ -246,6 +258,32 @@ function getActionBtns() {
     <button class="btn-gitlab"  id="gitlab-btn"  onclick="pushToGitLab()">Push to GitLab</button>
     <button class="btn-github"  id="github-btn"  onclick="pushToGitHub()">Push to GitHub</button>
     <button class="btn-meeting" id="meeting-btn" onclick="runMeeting()">Run Team Meeting</button>
+    <div style="background:#ffffff11;border-radius:8px;padding:12px;margin-top:4px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:13px;font-weight:600;color:#ccc">Reduce Cost by</span>
+        <span id="slider-label" style="font-size:18px;font-weight:700;color:#F4A460">20%</span>
+      </div>
+      <input type="range" id="cost-slider" min="10" max="70" value="20" step="5"
+        oninput="
+          document.getElementById('slider-label').textContent=this.value+'%';
+          const pct=parseInt(this.value);
+          const meetBtn=document.getElementById('meeting-btn');
+          if(meetBtn){
+            if(pct<=20) meetBtn.textContent='Run Team Meeting';
+            else if(pct<=40) meetBtn.textContent='Run Team Meeting — Review '+pct+'% Cuts';
+            else if(pct<=60) meetBtn.textContent='Run Team Meeting — Debate '+pct+'% Reduction';
+            else meetBtn.textContent='Run Team Meeting — Crisis Mode '+pct+'% Cuts';
+          }
+        "
+        style="width:100%;accent-color:#F4A460;cursor:pointer;margin-bottom:6px"/>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:#888;margin-bottom:10px">
+        <span>10% small cuts</span><span>40% moderate</span><span>70% aggressive</span>
+      </div>
+      <button onclick="optimizeBudget(parseInt(document.getElementById('cost-slider').value))"
+        style="width:100%;padding:12px;background:#854F0B;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">
+        Optimize Budget
+      </button>
+    </div>
   </div>`
 }
 
@@ -450,9 +488,18 @@ async function runMeeting() {
       </div>
       <div class="typing"><span></span><span></span><span></span></div>
     </div>`
+  const sliderVal = document.getElementById("cost-slider")
+  const optimizePct = sliderVal ? parseInt(sliderVal.value) : 0
+  const meetingContext = optimizePct > 20
+    ? `IMPORTANT: The team is discussing a ${optimizePct}% budget cut. Agents should debate what to cut, push back on cuts, and negotiate trade-offs.`
+    : ""
   const res = await fetch("/meeting", {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ project_name: currentData.project_name, plan: currentData })
+    body: JSON.stringify({
+      project_name: currentData.project_name,
+      plan: currentData,
+      optimization_context: meetingContext
+    })
   })
   const data = await res.json()
   if (data.error) {
@@ -487,6 +534,110 @@ async function runMeeting() {
     msgEl.scrollIntoView({ behavior:"smooth", block:"nearest" })
   }
   btn.textContent = "Re-run Meeting"; btn.disabled = false
+}
+
+async function optimizeBudget(percent) {
+  if (!currentData) return
+  const btn = event.target
+  btn.textContent = "Optimizing " + percent + "%..."
+  btn.disabled = true
+
+  const existing = document.getElementById("optimize-panel")
+  if (existing) existing.remove()
+
+  const loadingDiv = document.createElement("div")
+  loadingDiv.id = "optimize-panel"
+  loadingDiv.style.cssText = "background:#fff;border-radius:12px;border:2px solid #854F0B44;padding:1.5rem;margin-top:1rem;animation:fadeSlideIn 0.5s ease forwards"
+  loadingDiv.innerHTML = `
+    <h3 style="font-size:15px;color:#854F0B;margin-bottom:1rem">Optimizing budget by ${percent}%...</h3>
+    <div class="typing"><span></span><span></span><span></span></div>
+    <p style="font-size:13px;color:#888;margin-top:8px">Agents are renegotiating scope, staffing and timeline...</p>`
+  document.getElementById("result-area").insertAdjacentElement("afterend", loadingDiv)
+  loadingDiv.scrollIntoView({ behavior: "smooth" })
+
+  try {
+    const res = await fetch("/optimize", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        idea: document.getElementById("idea").value,
+        project_name: currentData.project_name,
+        current_plan: currentData,
+        reduce_by_percent: percent
+      })
+    })
+    const data = await res.json()
+
+    if (data.error) {
+      loadingDiv.innerHTML = `<p style="color:red">Error: ${data.error}</p>`
+      btn.textContent = "Optimize Budget"; btn.disabled = false
+      return
+    }
+
+    const savings = data.savings || 0
+    const savingsPct = Math.round((savings / (data.original_cost||1)) * 100)
+
+    loadingDiv.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <h3 style="font-size:15px;color:#854F0B">${percent}% Cost Reduction Plan</h3>
+        <span style="background:#854F0B11;color:#854F0B;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600">Saved $${savings.toLocaleString()}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1rem">
+        <div style="background:#f8f8f6;border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:11px;color:#888;margin-bottom:4px">New cost</div>
+          <div style="font-size:20px;font-weight:700;color:#854F0B">$${data.total_cost_usd?.toLocaleString()}</div>
+          <div style="font-size:11px;color:#888">was $${data.original_cost?.toLocaleString()}</div>
+        </div>
+        <div style="background:#f8f8f6;border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:11px;color:#888;margin-bottom:4px">Timeline</div>
+          <div style="font-size:20px;font-weight:700">${data.timeline_weeks} weeks</div>
+        </div>
+        <div style="background:#f8f8f6;border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:11px;color:#888;margin-bottom:4px">Team size</div>
+          <div style="font-size:20px;font-weight:700">${data.team_size} people</div>
+        </div>
+      </div>
+      <div style="margin-bottom:1rem">
+        <div style="font-size:12px;color:#888;margin-bottom:4px">Savings achieved</div>
+        <div style="height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden;margin-bottom:4px">
+          <div id="savings-fill" style="height:100%;background:#0F6E56;border-radius:4px;width:0%;transition:width 1s ease"></div>
+        </div>
+        <div style="font-size:12px;color:#0F6E56;font-weight:600">${savingsPct}% saved</div>
+      </div>
+      <div style="margin-bottom:1rem">
+        <div style="font-size:12px;font-weight:600;color:#333;margin-bottom:6px">What was optimized</div>
+        ${(data.changes_made||[]).map(c=>`<div style="font-size:13px;color:#444;margin-bottom:4px">• ${c}</div>`).join("")}
+      </div>
+      <div style="background:#FFF3CD;border-radius:8px;padding:12px;margin-bottom:1rem">
+        <div style="font-size:12px;font-weight:600;color:#856404;margin-bottom:4px">Summary</div>
+        <div style="font-size:13px;color:#856404">${data.optimization_summary||""}</div>
+      </div>
+      <div style="margin-bottom:1rem">
+        <div style="font-size:12px;font-weight:600;color:#333;margin-bottom:6px">New risks</div>
+        ${(data.top_risks||[]).map(r=>`<div style="font-size:13px;color:#cc2200;margin-bottom:4px">⚠ ${r}</div>`).join("")}
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="optimizeBudget(parseInt(document.getElementById('cost-slider').value))"
+          style="flex:1;padding:10px;background:#854F0B;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">
+          Re-optimize
+        </button>
+        <button onclick="currentData=Object.assign({},currentData,{total_cost_usd:${data.total_cost_usd},timeline_weeks:${data.timeline_weeks},team_size:${data.team_size}});renderResult(currentData);document.getElementById('optimize-panel').remove()"
+          style="flex:1;padding:10px;background:#0F6E56;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">
+          Accept Plan
+        </button>
+      </div>`
+
+    setTimeout(() => {
+      const fill = document.getElementById("savings-fill")
+      if (fill) fill.style.width = savingsPct + "%"
+    }, 200)
+
+  } catch(e) {
+    loadingDiv.innerHTML = `<p style="color:red">Error: ${e.message}</p>`
+  }
+
+  btn.textContent = "Optimize Budget"
+  btn.disabled = false
 }
 
 async function launch() {

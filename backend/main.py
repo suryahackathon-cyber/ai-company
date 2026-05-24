@@ -89,6 +89,7 @@ class GitLabRequest(BaseModel):
 class MeetingRequest(BaseModel):
     project_name: str
     plan: dict
+    optimization_context: str = ""
 
 def clean_json(text):
     text = text.strip()
@@ -223,6 +224,7 @@ Project: {req.project_name}
 Plan: Timeline {req.plan.get('timeline_weeks')}w, Team {req.plan.get('team_size')}, Cost ${req.plan.get('total_cost_usd')}
 Stack: {req.plan.get('departments',{}).get('architect',{}).get('backend')} / {req.plan.get('departments',{}).get('architect',{}).get('frontend')}
 Risk: {req.plan.get('top_risks',['Unknown'])[0]}
+{req.optimization_context}
 
 Simulate 8 agent messages as a JSON array:
 [{{"agent":"PM Agent","message":"...","type":"normal"}},{{"agent":"Architect Agent","message":"...","type":"concern"}},{{"agent":"Dev Agent","message":"...","type":"normal"}},{{"agent":"QA Agent","message":"...","type":"warning"}},{{"agent":"DevOps Agent","message":"...","type":"normal"}},{{"agent":"PM Agent","message":"...","type":"decision"}},{{"agent":"Marketing Agent","message":"...","type":"normal"}},{{"agent":"Dev Agent","message":"...","type":"concern"}}]
@@ -361,5 +363,60 @@ def health():
 def root():
     return FileResponse("static/index.html")
 
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
+
+class OptimizeRequest(BaseModel):
+    idea: str
+    project_name: str
+    current_plan: dict
+    reduce_by_percent: int
+
+@app.post("/optimize")
+async def optimize_budget(req: OptimizeRequest):
+    try:
+        current_cost = req.current_plan.get("total_cost_usd", 0)
+        target_cost = int(current_cost * (1 - req.reduce_by_percent / 100))
+        prompt = f"""
+You are a senior project manager optimizing a software project budget.
+Project: {req.project_name}
+Current cost: ${current_cost}
+Timeline: {req.current_plan.get('timeline_weeks')} weeks
+Team size: {req.current_plan.get('team_size')} people
+Target: Reduce by {req.reduce_by_percent}% to ${target_cost}
+
+Return ONLY valid JSON:
+{{
+  "project_name": "{req.project_name}",
+  "description": "Optimized version",
+  "timeline_weeks": 0,
+  "team_size": 0,
+  "total_cost_usd": {target_cost},
+  "original_cost": {current_cost},
+  "savings": {current_cost - target_cost},
+  "optimization_summary": "What was cut and why",
+  "changes_made": ["change1", "change2", "change3"],
+  "top_risks": ["risk1", "risk2", "risk3"],
+  "departments": {{
+    "pm":        {{"status":"complete","user_stories":["story1"],"sprints":["Sprint 1"],"priorities":["P0: MVP"]}},
+    "architect": {{"status":"complete","frontend":"...","backend":"...","database":"...","pattern":"..."}},
+    "dev":       {{"status":"complete","tech_stack":["tech1"],"modules":["module1"],"estimated_hours":0,"complexity":"Medium"}},
+    "qa":        {{"status":"complete","test_cases":["case1"],"risk_areas":["risk1"],"qa_hours":0}},
+    "devops":    {{"status":"complete","infrastructure":"...","cicd":"...","monthly_cost_usd":0,"environments":["dev","production"]}},
+    "marketing": {{"status":"complete","target_audience":"...","channels":["channel1"],"gtm_phases":["Phase 1"],"kpis":["DAU"]}}
+  }}
+}}
+"""
+        start = time.time()
+        response = gemini_generate(prompt)
+        latency = int((time.time() - start) * 1000)
+        text = clean_json(response.text)
+        result = json.loads(text)
+        result["original_cost"] = current_cost
+        result["savings"] = current_cost - result.get("total_cost_usd", target_cost)
+        log_to_arize("optimizer-agent", prompt[:200], response.text[:200], latency)
+        return result
+    except Exception as e:
+        print(traceback.format_exc())
+        return {"error": str(e)}
+
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
