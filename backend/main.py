@@ -123,27 +123,27 @@ def gemini_generate(prompt, system_instruction=None, retries=3):
 
 def log_to_arize(model_id, prompt, response_text, latency_ms):
     try:
-        log_data = json.dumps({
-            "model_id": model_id,
-            "model_version": "gemini-2.5-flash",
-            "prediction_id": f"{model_id}_{int(time.time())}",
-            "prompt": prompt[:300],
-            "response": response_text[:300],
-            "latency_ms": float(latency_ms),
-            "timestamp": int(time.time())
-        }).encode()
-        req = urllib.request.Request(
-            "https://api.arize.com/v1/log",
-            data=log_data,
-            headers={
-                "Authorization": f"Bearer {ARIZE_API_KEY}",
-                "Arize-Space-Id": ARIZE_SPACE_ID,
-                "Content-Type": "application/json"
-            },
-            method="POST"
+        import arize
+        import pandas as pd
+        client_arize = arize.ArizeClient(api_key=ARIZE_API_KEY)
+        df = pd.DataFrame([{
+            "context.span_id":              f"{model_id}_{int(time.time())}",
+            "context.trace_id":             f"trace_{int(time.time())}",
+            "span_kind":                    "LLM",
+            "name":                         model_id,
+            "attributes.input.value":       prompt[:500],
+            "attributes.output.value":      response_text[:500],
+            "attributes.llm.model_name":    "gemini-2.5-flash",
+            "status_code":                  "OK",
+            "start_time":                   pd.Timestamp.utcnow().isoformat(),
+            "end_time":                     pd.Timestamp.utcnow().isoformat(),
+        }])
+        res = client_arize.spans.log(
+            space_id=ARIZE_SPACE_ID,
+            project_name="ai-company",
+            dataframe=df
         )
-        with urllib.request.urlopen(req, timeout=5) as r:
-            print(f"Arize logged: {model_id} ({latency_ms}ms) status={r.status}")
+        print(f"Arize logged: {model_id} ({latency_ms}ms) status={res.status_code}")
     except Exception as e:
         print(f"Arize logging error (non-critical): {e}")
 
