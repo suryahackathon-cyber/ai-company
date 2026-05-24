@@ -9,7 +9,6 @@ import os, json, traceback, base64, time, re
 import urllib.request
 import urllib.error
 import urllib.parse
-from datetime import datetime
 
 load_dotenv()
 
@@ -18,31 +17,12 @@ GITHUB_TOKEN    = os.getenv("GITHUB_TOKEN")
 GITHUB_USERNAME = os.getenv("GITHUB_USERNAME")
 GITLAB_TOKEN    = os.getenv("GITLAB_TOKEN")
 GITLAB_USERNAME = os.getenv("GITLAB_USERNAME")
-MONGODB_URI     = os.getenv("MONGODB_URI")
-ARIZE_API_KEY   = os.getenv("ARIZE_API_KEY")
-ARIZE_SPACE_ID  = os.getenv("ARIZE_SPACE_ID")
 
 print(f"Google key loaded: {GOOGLE_API_KEY[:10]}..." if GOOGLE_API_KEY else "ERROR: No Google key!")
+print(f"GitHub user: {GITHUB_USERNAME}" if GITHUB_USERNAME else "ERROR: No GitHub username!")
 print(f"GitLab user: {GITLAB_USERNAME}" if GITLAB_USERNAME else "ERROR: No GitLab username!")
-print(f"MongoDB: Connected" if MONGODB_URI else "ERROR: No MongoDB URI!")
-print(f"Arize: Connected" if ARIZE_API_KEY else "ERROR: No Arize key!")
 
-# Gemini client
 client = genai.Client(api_key=GOOGLE_API_KEY)
-
-# MongoDB client
-from pymongo import MongoClient
-mongo_client = MongoClient(MONGODB_URI)
-db = mongo_client["ai_company"]
-projects_collection = db["projects"]
-print("MongoDB connected successfully!")
-
-# Arize client
-# arize imported below
-
-
-
-print("Arize ready!")
 
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -90,27 +70,6 @@ class MeetingRequest(BaseModel):
     project_name: str
     plan: dict
 
-def gemini_generate(prompt, system_instruction=None, retries=3):
-    for attempt in range(retries):
-        try:
-            config = {}
-            if system_instruction:
-                config["system_instruction"] = system_instruction
-            response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt,
-                config=config if config else None
-            )
-            return response
-        except Exception as e:
-            if "503" in str(e) or "UNAVAILABLE" in str(e):
-                wait = (attempt + 1) * 10
-                print(f"Gemini busy, retrying in {wait}s... (attempt {attempt+1}/{retries})")
-                time.sleep(wait)
-            else:
-                raise e
-    raise Exception("Gemini unavailable after retries")
-
 def clean_json(text):
     text = text.strip()
     if "```json" in text:
@@ -120,63 +79,16 @@ def clean_json(text):
     text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', text)
     return text.strip()
 
-def log_to_arize(model_id, prompt, response_text, latency_ms, tokens=0):
-    try:
-        import pandas as pd
-        from arize.pandas.logger import Client as ArizeLogger
-        from arize.utils.types import ModelTypes, Environments, Schema
-        arize_logger = ArizeLogger(
-            space_id=ARIZE_SPACE_ID,
-            api_key=ARIZE_API_KEY
-        )
-        df = pd.DataFrame([{
-            "prediction_id": f"{model_id}_{int(time.time())}",
-            "prompt": prompt[:500],
-            "response": response_text[:500],
-            "latency_ms": float(latency_ms),
-        }])
-        schema = Schema(
-            prediction_id_column_name="prediction_id",
-            prompt_column_name="prompt",
-            response_column_name="response",
-        )
-        res = arize_logger.log(
-            dataframe=df,
-            schema=schema,
-            model_id=model_id,
-            model_type=ModelTypes.GENERATIVE_LLM,
-            environment=Environments.PRODUCTION,
-            model_version="gemini-2.5-flash",
-        )
-        print(f"Arize logged: {model_id} ({latency_ms}ms) status={res.status_code}")
-    except Exception as e:
-        print(f"Arize logging error (non-critical): {e}")
-
-def save_to_mongodb(project_name, idea, result):
-    try:
-        doc = {
-            "project_name": project_name,
-            "idea": idea,
-            "result": result,
-            "created_at": datetime.utcnow(),
-            "timestamp": int(time.time())
-        }
-        projects_collection.insert_one(doc)
-        print(f"Saved to MongoDB: {project_name}")
-    except Exception as e:
-        print(f"MongoDB save error: {e}")
-
 @app.post("/run")
 async def run_company(req: ProjectRequest):
     try:
-        start = time.time()
-        response = gemini_generate(req.idea, system_instruction=PLAN_INSTRUCTIONS)
-        latency = int((time.time() - start) * 1000)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=req.idea,
+            config={"system_instruction": PLAN_INSTRUCTIONS}
+        )
         text = clean_json(response.text)
-        result = json.loads(text)
-        save_to_mongodb(result.get("project_name", "Unknown"), req.idea, result)
-        log_to_arize("orchestrator-agent", req.idea, response.text, latency)
-        return result
+        return json.loads(text)
     except Exception as e:
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
@@ -194,13 +106,19 @@ async def build_app(req: BuildRequest):
         ]
         for filename, language, description in file_specs:
             try:
-                prompt = f"Project: {req.project_name}\nIdea: {req.idea}\n\nWrite {description} for this project.\nReturn ONLY the raw {language} code. No explanation. No markdown fences."
-                start = time.time()
+                prompt = f"""
+Project: {req.project_name}
+Idea: {req.idea}
+
+Write {description} for this project.
+Return ONLY the raw {language} code.
+No explanation. No markdown fences. Just the code itself.
+Make it production-quality and complete.
+"""
                 response = client.models.generate_content(
                     model="gemini-2.5-flash",
                     contents=prompt
                 )
-                latency = int((time.time() - start) * 1000)
                 content = response.text.strip()
                 if content.startswith("```"):
                     content = content.split("```")[1]
@@ -208,12 +126,11 @@ async def build_app(req: BuildRequest):
                         content = "\n".join(content.split("\n")[1:])
                 content = content.rstrip("`").strip()
                 files.append({"filename": filename, "language": language, "content": content})
-                log_to_arize("dev-agent", prompt[:200], content[:200], latency)
                 print(f"Generated: {filename}")
                 time.sleep(3)
             except Exception as fe:
                 print(f"Error generating {filename}: {fe}")
-                files.append({"filename": filename, "language": language, "content": f"// Error: {str(fe)}"})
+                files.append({"filename": filename, "language": language, "content": f"// Error generating this file: {str(fe)}"})
         return {"files": files}
     except Exception as e:
         print(traceback.format_exc())
@@ -245,19 +162,16 @@ Return ONLY a JSON array of 8 messages like this:
   {{"agent": "Dev Agent",       "message": "...", "type": "concern"}}
 ]
 Type must be one of: normal, concern, warning, decision
-Messages must be realistic and specific to this project.
+Messages must be realistic, specific to this project, show disagreement and negotiation.
+No generic responses. Reference actual tech stack, timeline, costs.
 Return ONLY the JSON array. No markdown. No explanation.
 """
-        start = time.time()
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=prompt
         )
-        latency = int((time.time() - start) * 1000)
         text = clean_json(response.text)
-        messages = json.loads(text)
-        log_to_arize("meeting-agent", prompt[:200], response.text[:200], latency)
-        return {"messages": messages}
+        return {"messages": json.loads(text)}
     except Exception as e:
         print(traceback.format_exc())
         return {"error": str(e)}
@@ -287,6 +201,7 @@ async def push_to_github(req: GitHubRequest):
         with urllib.request.urlopen(github_req) as response:
             repo_data = json.loads(response.read())
         repo_url = repo_data["html_url"]
+        print(f"Repo created: {repo_url}")
         time.sleep(2)
         pushed = 0
         for file in req.files:
@@ -302,6 +217,7 @@ async def push_to_github(req: GitHubRequest):
                     method="PUT"
                 )
                 with urllib.request.urlopen(file_req) as r:
+                    print(f"Pushed: {file['filename']}")
                     pushed += 1
                 time.sleep(0.5)
             except Exception as fe:
@@ -377,6 +293,7 @@ async def push_to_gitlab(req: GitLabRequest):
                     method="POST"
                 )
                 with urllib.request.urlopen(file_req) as r:
+                    print(f"Pushed to GitLab: {file['filename']}")
                     pushed += 1
                 time.sleep(0.5)
             except Exception as fe:
@@ -393,7 +310,7 @@ async def push_to_gitlab(req: GitLabRequest):
         for issue in issues:
             try:
                 issue_data = json.dumps({
-                    "title": issue["title"],
+                    "title":       issue["title"],
                     "description": issue["description"]
                 }).encode()
                 issue_req = urllib.request.Request(
@@ -434,30 +351,9 @@ async def push_to_gitlab(req: GitLabRequest):
         print(traceback.format_exc())
         return {"success": False, "error": str(e)}
 
-@app.get("/projects")
-async def get_projects():
-    try:
-        projects = list(projects_collection.find(
-            {},
-            {"_id": 0, "project_name": 1, "idea": 1, "created_at": 1,
-             "result.timeline_weeks": 1, "result.team_size": 1, "result.total_cost_usd": 1}
-        ).sort("created_at", -1).limit(10))
-        for p in projects:
-            if "created_at" in p:
-                p["created_at"] = p["created_at"].strftime("%Y-%m-%d %H:%M")
-        return {"projects": projects}
-    except Exception as e:
-        print(traceback.format_exc())
-        return {"projects": []}
-
 @app.get("/health")
 def health():
-    return {
-        "status": "AI Company backend running",
-        "mongodb": "connected",
-        "arize": "connected",
-        "gitlab": "connected"
-    }
+    return {"status": "AI Company backend running"}
 
 @app.get("/")
 def root():
