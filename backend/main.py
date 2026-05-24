@@ -419,4 +419,37 @@ Return ONLY valid JSON:
         print(traceback.format_exc())
         return {"error": str(e)}
 
+
+
+class WorkforceRequest(BaseModel):
+    idea: str
+    project_name: str
+    current_plan: dict
+    additional_developers: int
+
+@app.post("/workforce")
+async def optimize_workforce(req: WorkforceRequest):
+    try:
+        current_weeks = req.current_plan.get("timeline_weeks", 8)
+        current_team  = req.current_plan.get("team_size", 6)
+        current_cost  = req.current_plan.get("total_cost_usd", 50000)
+        current_hours = req.current_plan.get("departments", {}).get("dev", {}).get("estimated_hours", 320)
+        new_team = current_team + req.additional_developers
+        extra_cost = req.additional_developers * 2500 * current_weeks
+        prompt = f"Project: {req.project_name}. Currently {current_weeks} weeks, {current_team} people, ${current_cost}. Adding {req.additional_developers} developers (new team: {new_team}). Extra cost: ${extra_cost}. Calculate realistic timeline savings considering Brooks Law. Return ONLY JSON: {{new_timeline_weeks: 0, new_team_size: {new_team}, new_total_cost_usd: {int(current_cost + extra_cost)}, days_saved: 0, weeks_saved: 0, cost_increase: {int(extra_cost)}, efficiency_gain_percent: 0, brooks_law_warning: false, brooks_law_message: str, parallel_workstreams: [], recommendation: str, trade_off_summary: str, original_weeks: {current_weeks}, original_team: {current_team}, original_cost: {current_cost}}}"
+        start = time.time()
+        response = gemini_generate(prompt)
+        latency = int((time.time() - start) * 1000)
+        text = clean_json(response.text)
+        result = json.loads(text)
+        result["original_weeks"] = current_weeks
+        result["original_team"]  = current_team
+        result["original_cost"]  = current_cost
+        result["additional_developers"] = req.additional_developers
+        log_to_arize("workforce-agent", prompt[:200], response.text[:200], latency)
+        return result
+    except Exception as e:
+        print(traceback.format_exc())
+        return {"error": str(e)}
+
 app.mount("/", StaticFiles(directory="static", html=True), name="static")

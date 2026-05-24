@@ -284,6 +284,26 @@ function getActionBtns() {
         Optimize Budget
       </button>
     </div>
+    <div style="background:#ffffff11;border-radius:8px;padding:12px;margin-top:4px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:13px;font-weight:600;color:#ccc">Add Developers</span>
+        <span id="dev-label" style="font-size:18px;font-weight:700;color:#4FC3F7">+1 dev</span>
+      </div>
+      <input type="range" id="dev-slider" min="1" max="5" value="1" step="1"
+        oninput="
+          const v=parseInt(this.value);
+          document.getElementById('dev-label').textContent='+'+v+' dev'+(v>1?'s':'');
+          document.getElementById('workforce-btn').textContent='Calculate Impact of +'+v+' Developer'+(v>1?'s':'');
+        "
+        style="width:100%;accent-color:#4FC3F7;cursor:pointer;margin-bottom:6px"/>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:#888;margin-bottom:10px">
+        <span>+1 fast</span><span>+3 balanced</span><span>+5 max</span>
+      </div>
+      <button id="workforce-btn" onclick="optimizeWorkforce(parseInt(document.getElementById('dev-slider').value))"
+        style="width:100%;padding:12px;background:#185FA5;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">
+        Calculate Impact of +1 Developer
+      </button>
+    </div>
   </div>`
 }
 
@@ -534,6 +554,102 @@ async function runMeeting() {
     msgEl.scrollIntoView({ behavior:"smooth", block:"nearest" })
   }
   btn.textContent = "Re-run Meeting"; btn.disabled = false
+}
+
+async function optimizeWorkforce(additionalDevs) {
+  if (!currentData) return
+  const btn = document.getElementById("workforce-btn")
+  btn.textContent = "Calculating..."; btn.disabled = true
+
+  const existing = document.getElementById("workforce-panel")
+  if (existing) existing.remove()
+
+  const loadingDiv = document.createElement("div")
+  loadingDiv.id = "workforce-panel"
+  loadingDiv.style.cssText = "background:#fff;border-radius:12px;border:2px solid #185FA544;padding:1.5rem;margin-top:1rem;animation:fadeSlideIn 0.5s ease forwards"
+  loadingDiv.innerHTML = `
+    <h3 style="font-size:15px;color:#185FA5;margin-bottom:1rem">Calculating impact of +${additionalDevs} developer${additionalDevs>1?'s':''}...</h3>
+    <div class="typing"><span></span><span></span><span></span></div>`
+  document.getElementById("result-area").insertAdjacentElement("afterend", loadingDiv)
+  loadingDiv.scrollIntoView({ behavior: "smooth" })
+
+  try {
+    const res = await fetch("/workforce", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        idea: document.getElementById("idea").value,
+        project_name: currentData.project_name,
+        current_plan: currentData,
+        additional_developers: additionalDevs
+      })
+    })
+    const data = await res.json()
+
+    if (data.error) {
+      loadingDiv.innerHTML = `<p style="color:red">Error: ${data.error}</p>`
+      btn.textContent = "Calculate Impact of +"+additionalDevs+" Developer"+(additionalDevs>1?"s":"")
+      btn.disabled = false
+      return
+    }
+
+    const weeksSaved = data.weeks_saved || 0
+    const costIncrease = data.cost_increase || 0
+
+    loadingDiv.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <h3 style="font-size:15px;color:#185FA5">+${additionalDevs} Developer${additionalDevs>1?'s':''} Impact</h3>
+        <span style="background:#185FA511;color:#185FA5;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600">
+          ${weeksSaved > 0 ? weeksSaved+"w faster" : "No time savings"}
+        </span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:1rem">
+        <div style="background:#f8f8f6;border-radius:8px;padding:12px">
+          <div style="font-size:11px;color:#888;margin-bottom:8px">Before vs After</div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+            <span style="color:#888">Timeline:</span>
+            <span><s style="color:#aaa">${data.original_weeks}w</s> → <b style="color:#185FA5">${data.new_timeline_weeks}w</b></span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+            <span style="color:#888">Team:</span>
+            <span><s style="color:#aaa">${data.original_team}</s> → <b style="color:#185FA5">${data.new_team_size}</b></span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px">
+            <span style="color:#888">Cost:</span>
+            <span><s style="color:#aaa">$${data.original_cost?.toLocaleString()}</s> → <b style="color:#cc2200">$${data.new_total_cost_usd?.toLocaleString()}</b></span>
+          </div>
+        </div>
+        <div style="background:#f8f8f6;border-radius:8px;padding:12px">
+          <div style="font-size:11px;color:#888;margin-bottom:8px">Trade-off</div>
+          <div style="font-size:14px;color:#185FA5;font-weight:600;margin-bottom:4px">⚡ ${weeksSaved}w faster</div>
+          <div style="font-size:14px;color:#cc2200;font-weight:600;margin-bottom:4px">💰 +$${costIncrease?.toLocaleString()}</div>
+          <div style="font-size:12px;color:#888">${data.efficiency_gain_percent||0}% efficiency gain</div>
+        </div>
+      </div>
+      ${data.brooks_law_warning ? `
+      <div style="background:#FFEBEE;border-radius:8px;padding:12px;margin-bottom:1rem;border-left:3px solid #EF5350">
+        <div style="font-size:12px;font-weight:600;color:#C62828;margin-bottom:4px">⚠ Brooks Law Warning</div>
+        <div style="font-size:13px;color:#C62828">${data.brooks_law_message}</div>
+      </div>` : ""}
+      <div style="margin-bottom:1rem">
+        <div style="font-size:12px;font-weight:600;color:#333;margin-bottom:6px">Parallel workstreams</div>
+        ${(data.parallel_workstreams||[]).map(w=>`<div style="font-size:13px;color:#444;margin-bottom:4px">• ${w}</div>`).join("")}
+      </div>
+      <div style="background:#E3F2FD;border-radius:8px;padding:12px;margin-bottom:1rem">
+        <div style="font-size:12px;font-weight:600;color:#185FA5;margin-bottom:4px">Recommendation</div>
+        <div style="font-size:13px;color:#185FA5">${data.recommendation}</div>
+      </div>
+      <div style="font-size:13px;color:#555;margin-bottom:1rem">${data.trade_off_summary}</div>
+      <button onclick="currentData=Object.assign({},currentData,{timeline_weeks:${data.new_timeline_weeks},team_size:${data.new_team_size},total_cost_usd:${data.new_total_cost_usd}});renderResult(currentData);document.getElementById('workforce-panel').remove()"
+        style="width:100%;padding:12px;background:#185FA5;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">
+        Accept — Update Plan
+      </button>`
+
+  } catch(e) {
+    loadingDiv.innerHTML = `<p style="color:red">Error: ${e.message}</p>`
+  }
+  btn.textContent = "Calculate Impact of +"+additionalDevs+" Developer"+(additionalDevs>1?"s":"")
+  btn.disabled = false
 }
 
 async function optimizeBudget(percent) {

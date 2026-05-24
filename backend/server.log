@@ -1,5 +1,5 @@
 nohup: ignoring input
-INFO:     Started server process [1696]
+INFO:     Started server process [1811]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
@@ -7,19 +7,16 @@ Google key loaded: AIzaSyAXRu...
 GitLab user: suryahackathon-cyber
 Firestore connected successfully!
 Arize: Connected
+INFO:     127.0.0.1:33218 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47460 - "GET /?authuser=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47460 - "GET /projects HTTP/1.1" 200 OK
+Saved to Firestore: BP Checking App
 Arize logging error (non-critical): HTTP Error 400: Bad Request
-INFO:     127.0.0.1:33176 - "POST /optimize HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36502 - "GET /?authuser=0 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36502 - "GET /projects HTTP/1.1" 200 OK
-Saved to Firestore: Modern Chess App
+INFO:     127.0.0.1:49444 - "POST /run HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49444 - "GET /projects HTTP/1.1" 200 OK
 Arize logging error (non-critical): HTTP Error 400: Bad Request
-INFO:     127.0.0.1:35210 - "POST /run HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35210 - "GET /projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37384 - "POST /workforce HTTP/1.1" 200 OK
 Arize logging error (non-critical): HTTP Error 400: Bad Request
-INFO:     127.0.0.1:35210 - "POST /meeting HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57402 - "POST /optimize HTTP/1.1" 200 OK
 Arize logging error (non-critical): HTTP Error 400: Bad Request
-INFO:     127.0.0.1:33268 - "POST /optimize HTTP/1.1" 200 OK
-Arize logging error (non-critical): HTTP Error 400: Bad Request
-INFO:     127.0.0.1:44492 - "POST /meeting HTTP/1.1" 200 OK
-Arize logging error (non-critical): HTTP Error 400: Bad Request
-INFO:     127.0.0.1:49812 - "POST /meeting HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44958 - "POST /meeting HTTP/1.1" 200 OK
