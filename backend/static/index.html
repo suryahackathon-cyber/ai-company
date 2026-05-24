@@ -4,128 +4,138 @@
   <title>AI Company</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui; background: #f5f5f3; }
-    .header { background: #1a1a2e; padding: 1.2rem 2rem; display: flex; align-items: center; gap: 12px; }
-    .logo { width: 36px; height: 36px; border-radius: 50%; background: #534AB7; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 16px; }
-    .header-title { color: #fff; font-weight: 600; font-size: 18px; }
-    .header-sub { color: #888; font-size: 12px; }
-    .main { max-width: 1100px; margin: 0 auto; padding: 2rem; }
-    .input-box { background: #fff; border-radius: 12px; border: 1px solid #e5e5e5; padding: 1.2rem; margin-bottom: 1.5rem; }
-    .input-row { display: flex; gap: 8px; }
-    .top-bar { display: flex; align-items: center; margin-bottom: 10px; }
-    input { flex: 1; padding: 10px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #ddd; outline: none; }
-    .launch-btn { padding: 10px 24px; background: #534AB7; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
-    .launch-btn:disabled { background: #aaa; cursor: not-allowed; }
-    .grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 1.5rem; }
-    .card { background: #fff; border-radius: 12px; padding: 1rem; border: 1px solid #e5e5e5; transition: all 0.3s; opacity: 0.4; transform: translateY(8px); }
-    .card.awake { opacity: 1; transform: translateY(0); }
-    .card.active { border-color: #534AB7; box-shadow: 0 0 0 3px #534AB722; transform: translateY(-2px) scale(1.02); opacity: 1; }
-    .card.done { opacity: 1; transform: translateY(0); border-left: 3px solid; }
-    .card-details { font-size: 12px; color: #444; line-height: 1.7; min-height: 40px; }
-    .card-details.reveal { animation: fadeSlideIn 0.5s ease forwards; }
-    @keyframes fadeSlideIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
-    .dot { width: 10px; height: 10px; border-radius: 50%; background: #ddd; flex-shrink: 0; transition: background 0.3s; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f0f0ee; }
+    .header { background: #1a1a2e; padding: 1rem 2rem; display: flex; align-items: center; gap: 12px; border-bottom: 0.5px solid #ffffff11; }
+    .logo { width: 32px; height: 32px; border-radius: 8px; background: #534AB7; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 500; font-size: 13px; flex-shrink: 0; }
+    .header-title { color: #fff; font-weight: 500; font-size: 15px; }
+    .header-sub { color: #888; font-size: 11px; }
+    .nav { display: flex; align-items: center; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+    .nav-badge { font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 500; white-space: nowrap; }
+    .main { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+    .card { background: #fff; border: 0.5px solid #e0e0dc; border-radius: 12px; padding: 1.2rem; margin-bottom: 1.2rem; }
+    .progress-bar { height: 2px; background: #e8e8e4; border-radius: 2px; margin-bottom: 1.2rem; overflow: hidden; }
+    .progress-fill { height: 100%; background: #534AB7; border-radius: 2px; width: 0%; transition: width 0.4s ease; }
+    .grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 1.2rem; }
+    .agent-card { background: #fff; border-radius: 12px; padding: 1rem; border: 0.5px solid #e0e0dc; transition: all 0.3s; opacity: 0.4; transform: translateY(6px); }
+    .agent-card.awake { opacity: 1; transform: translateY(0); }
+    .agent-card.active { border-color: #534AB7; box-shadow: 0 0 0 3px #534AB715; transform: translateY(-2px); opacity: 1; }
+    .agent-card.done { opacity: 1; transform: translateY(0); border-left: 2px solid; }
+    .card-details { font-size: 12px; color: #555; line-height: 1.6; min-height: 36px; }
+    .card-details.reveal { animation: fadeUp 0.4s ease forwards; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; flex-shrink: 0; transition: all 0.3s; }
     .dot.thinking { background: #534AB7; animation: pulse 0.8s ease-in-out infinite; }
-    @keyframes pulse { 0%,100%{ opacity:1; transform:scale(1) } 50%{ opacity:0.5; transform:scale(1.5) } }
-    .typing { display: flex; align-items: center; gap: 5px; padding: 6px 0; }
-    .typing span { width: 7px; height: 7px; border-radius: 50%; background: #534AB7; opacity: 0.3; animation: bounce 1.2s infinite; }
+    @keyframes pulse { 0%,100%{ opacity:1; transform:scale(1) } 50%{ opacity:0.4; transform:scale(1.5) } }
+    .typing { display: flex; align-items: center; gap: 4px; padding: 4px 0; }
+    .typing span { width: 6px; height: 6px; border-radius: 50%; background: #534AB7; opacity: 0.3; animation: bounce 1.2s infinite; }
     .typing span:nth-child(2) { animation-delay: 0.2s; }
     .typing span:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes bounce { 0%,60%,100%{ transform:translateY(0); opacity:0.3 } 30%{ transform:translateY(-6px); opacity:1 } }
-    .card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-    .card-label { font-weight: 600; font-size: 13px; }
+    @keyframes bounce { 0%,60%,100%{ transform:translateY(0); opacity:0.3 } 30%{ transform:translateY(-5px); opacity:1 } }
+    .card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .card-label { font-weight: 500; font-size: 13px; color: #1a1a2e; }
     .card-status { margin-left: auto; font-size: 11px; color: #aaa; }
-    .card-role { font-size: 11px; color: #888; margin-bottom: 8px; }
-    .summary { background: #1a1a2e; border-radius: 12px; padding: 1.5rem; color: #fff; margin-bottom: 1rem; animation: fadeSlideIn 0.6s ease forwards; }
-    .metrics { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 1rem; }
-    .metric { background: #ffffff11; border-radius: 8px; padding: 12px; }
-    .metric-label { font-size: 11px; color: #888; margin-bottom: 4px; }
-    .metric-value { font-size: 22px; font-weight: 700; }
-    .risk-item { font-size: 13px; color: #ccc; margin-bottom: 4px; }
-    .ceo-toggle { display: flex; align-items: center; gap: 8px; margin-left: auto; }
-    .ceo-label { font-size: 13px; color: #555; font-weight: 500; }
-    .toggle { position: relative; width: 40px; height: 22px; }
+    .card-role { font-size: 11px; color: #999; margin-bottom: 6px; }
+    .summary { background: #1a1a2e; border-radius: 12px; padding: 1.5rem; color: #fff; margin-bottom: 1rem; animation: fadeUp 0.5s ease forwards; }
+    .metrics { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 1rem; }
+    .metric { background: #ffffff0f; border-radius: 8px; padding: 12px; }
+    .metric-label { font-size: 11px; color: #888; margin-bottom: 3px; }
+    .metric-value { font-size: 20px; font-weight: 500; color: #fff; }
+    .risk-item { font-size: 13px; color: #bbb; margin-bottom: 3px; }
+    .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+    .toggle-label { font-size: 12px; color: #666; font-weight: 500; }
+    .toggle { position: relative; width: 36px; height: 20px; }
     .toggle input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; cursor: pointer; inset: 0; background: #ddd; border-radius: 22px; transition: 0.3s; }
-    .slider:before { content:""; position:absolute; width:16px; height:16px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:0.3s; }
+    .slider { position: absolute; cursor: pointer; inset: 0; background: #ddd; border-radius: 20px; transition: 0.3s; }
+    .slider:before { content:""; position:absolute; width:14px; height:14px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:0.3s; }
     input:checked + .slider { background: #534AB7; }
-    input:checked + .slider:before { transform: translateX(18px); }
-    .ceo-pitch { background: #fff; border-radius: 12px; border: 1px solid #e5e5e5; padding: 2rem; margin-bottom: 1rem; animation: fadeSlideIn 0.6s ease forwards; }
-    .pitch-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #f0f0f0; }
-    .pitch-title { font-size: 22px; font-weight: 700; color: #1a1a2e; }
-    .pitch-badge { background: #534AB711; color: #534AB7; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-    .pitch-section { margin-bottom: 1.2rem; }
-    .pitch-section h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: #aaa; margin-bottom: 8px; }
-    .pitch-metrics { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 1.5rem; }
-    .pitch-metric { text-align: center; background: #f8f8f6; border-radius: 10px; padding: 1rem; }
-    .pitch-metric-val { font-size: 22px; font-weight: 700; color: #534AB7; }
-    .pitch-metric-lbl { font-size: 11px; color: #888; margin-top: 4px; }
-    .tag { display: inline-block; background: #534AB711; color: #534AB7; border-radius: 6px; padding: 3px 10px; font-size: 12px; margin: 2px; }
-    .tag-red { background: #FF4B4B11; color: #cc2200; }
+    input:checked + .slider:before { transform: translateX(16px); }
+    .ceo-pitch { background: #fff; border-radius: 12px; border: 0.5px solid #e0e0dc; padding: 1.5rem; margin-bottom: 1rem; animation: fadeUp 0.5s ease forwards; }
+    .pitch-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.2rem; padding-bottom: 1rem; border-bottom: 0.5px solid #f0f0ec; }
+    .pitch-title { font-size: 20px; font-weight: 500; color: #1a1a2e; }
+    .pitch-badge { background: #534AB711; color: #534AB7; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+    .pitch-section { margin-bottom: 1rem; }
+    .pitch-section h3 { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: #bbb; margin-bottom: 6px; font-weight: 500; }
+    .pitch-metrics { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 1.2rem; }
+    .pitch-metric { text-align: center; background: #f8f8f6; border-radius: 10px; padding: 12px; }
+    .pitch-metric-val { font-size: 20px; font-weight: 500; color: #534AB7; }
+    .pitch-metric-lbl { font-size: 11px; color: #999; margin-top: 3px; }
+    .tag { display: inline-block; background: #534AB711; color: #534AB7; border-radius: 6px; padding: 3px 8px; font-size: 12px; margin: 2px; }
+    .tag-red { background: #cc220011; color: #cc2200; }
     .tag-green { background: #0F6E5611; color: #0F6E56; }
-    .progress-bar { height: 3px; background: #f0f0f0; border-radius: 3px; margin-bottom: 1.5rem; overflow: hidden; }
-    .progress-fill { height: 100%; background: #534AB7; border-radius: 3px; width: 0%; transition: width 0.4s ease; }
-    .action-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 1.2rem; }
-    .btn-build   { padding: 12px 28px; background: #0F6E56; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; width: 100%; transition: background 0.2s; }
-    .btn-github  { padding: 12px 28px; background: #1a1a2e; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; width: 100%; display: none; }
-    .btn-gitlab  { padding: 12px 28px; background: #FC6D26; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; width: 100%; display: none; }
-    .btn-meeting { padding: 12px 28px; background: #185FA5; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; width: 100%; }
+    .action-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 1rem; }
+    .action-row { display: flex; gap: 8px; }
+    .btn-build   { padding: 11px 20px; background: #0F6E56; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; flex: 1; transition: opacity 0.2s; }
+    .btn-gitlab  { padding: 11px 20px; background: #FC6D26; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; flex: 1; display: none; }
+    .btn-github  { padding: 11px 20px; background: #1a1a2e; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; flex: 1; display: none; }
+    .btn-meeting { padding: 11px 20px; background: #185FA5; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; flex: 1; }
     .btn-meeting:disabled { background: #aaa; cursor: not-allowed; }
-    .code-panel { background: #fff; border-radius: 12px; border: 1px solid #e5e5e5; padding: 1.5rem; margin-top: 1rem; animation: fadeSlideIn 0.5s ease forwards; }
-    .file-tab { padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; margin-bottom: 4px; border-left: 2px solid transparent; transition: all 0.2s; }
+    .slider-block { border-radius: 8px; padding: 12px; margin-top: 8px; }
+    .code-panel { background: #fff; border-radius: 12px; border: 0.5px solid #e0e0dc; padding: 1.2rem; margin-top: 1rem; animation: fadeUp 0.4s ease forwards; }
+    .file-tab { padding: 7px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; margin-bottom: 3px; border-left: 2px solid transparent; transition: all 0.2s; color: #555; }
     .file-tab.active { background: #534AB711; color: #534AB7; border-left-color: #534AB7; }
-    .meeting-panel { background: #fff; border-radius: 12px; border: 1px solid #e5e5e5; padding: 1.5rem; margin-top: 1rem; animation: fadeSlideIn 0.5s ease forwards; }
-    .chat-msg { display: flex; gap: 10px; margin-bottom: 12px; animation: fadeSlideIn 0.4s ease forwards; }
-    .chat-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; color: #fff; }
+    .meeting-panel { background: #fff; border-radius: 12px; border: 0.5px solid #e0e0dc; padding: 1.2rem; margin-top: 1rem; animation: fadeUp 0.4s ease forwards; }
+    .chat-msg { display: flex; gap: 10px; margin-bottom: 10px; animation: fadeUp 0.3s ease forwards; }
+    .chat-avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 500; flex-shrink: 0; color: #fff; }
     .chat-bubble { flex: 1; padding: 8px 12px; border-radius: 0 10px 10px 10px; font-size: 13px; line-height: 1.5; }
-    .bubble-normal   { background: #f5f5f3; color: #333; }
-    .bubble-concern  { background: #FFF3CD; color: #856404; border-left: 3px solid #FFC107; }
-    .bubble-warning  { background: #FFEBEE; color: #C62828; border-left: 3px solid #EF5350; }
-    .bubble-decision { background: #E8F5E9; color: #1B5E20; border-left: 3px solid #4CAF50; }
-    .chat-name { font-size: 11px; font-weight: 600; margin-bottom: 3px; }
-    .projects-panel { background:#fff; border-radius:12px; border:1px solid #e5e5e5; padding:1.5rem; margin-bottom:1.5rem; }
-    .project-item { display:flex; align-items:center; gap:12px; padding:10px 8px; border-bottom:0.5px solid #f0f0f0; cursor:pointer; border-radius:8px; transition:background 0.2s; }
-    .project-item:last-child { border-bottom:none; }
-    .project-item:hover { background:#f8f8f6; }
-    .project-dot { width:8px; height:8px; border-radius:50%; background:#534AB7; flex-shrink:0; }
-    .project-name { font-size:13px; font-weight:500; color:#1a1a2e; flex:1; }
-    .project-meta { font-size:11px; color:#888; }
-    .project-badge { font-size:11px; background:#534AB711; color:#534AB7; padding:2px 8px; border-radius:20px; white-space:nowrap; }
+    .bubble-normal   { background: #f5f5f2; color: #333; }
+    .bubble-concern  { background: #FFF8E1; color: #7a5c00; border-left: 2px solid #FFC107; }
+    .bubble-warning  { background: #FFEBEE; color: #b71c1c; border-left: 2px solid #EF5350; }
+    .bubble-decision { background: #E8F5E9; color: #1b5e20; border-left: 2px solid #4CAF50; }
+    .chat-name { font-size: 11px; font-weight: 500; margin-bottom: 3px; }
+    .past-panel { background: #fff; border-radius: 12px; border: 0.5px solid #e0e0dc; padding: 1.2rem; margin-bottom: 1.2rem; }
+    .past-tag { display: inline-flex; align-items: center; gap: 6px; background: #f5f5f2; color: #444; border-radius: 20px; padding: 4px 12px; font-size: 12px; margin: 3px; cursor: pointer; border: 0.5px solid #e8e8e4; transition: all 0.2s; }
+    .past-tag:hover { background: #534AB711; color: #534AB7; border-color: #534AB733; }
   </style>
 </head>
 <body>
 <div class="header">
-  <div class="logo">A</div>
+  <div class="logo">AI</div>
   <div>
     <div class="header-title">AI Company</div>
-    <div class="header-sub">Autonomous Software Company — Powered by Gemini + GitLab + Firestore</div>
+    <div class="header-sub">Autonomous Software Company</div>
+  </div>
+  <div class="nav">
+    <span class="nav-badge" style="background:#534AB711;color:#534AB7">Gemini 2.5</span>
+    <span class="nav-badge" style="background:#FC6D2611;color:#FC6D26">GitLab</span>
+    <span class="nav-badge" style="background:#0F6E5611;color:#0F6E56">Firestore</span>
+    <span class="nav-badge" style="background:#185FA511;color:#185FA5">Arize</span>
   </div>
 </div>
+
 <div class="main">
-  <div class="input-box">
-    <div class="top-bar">
-      <span style="font-weight:600;font-size:15px">Describe your project idea</span>
-      <div class="ceo-toggle">
-        <span class="ceo-label">CEO Mode</span>
+  <div id="projects-panel"></div>
+
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <span style="font-size:13px;font-weight:500;color:#1a1a2e">Describe your project idea</span>
+      <div class="toggle-wrap">
+        <span class="toggle-label">CEO Mode</span>
         <label class="toggle">
           <input type="checkbox" id="ceo-toggle" onchange="toggleCEO()">
           <span class="slider"></span>
         </label>
       </div>
     </div>
-    <div class="input-row">
-      <input id="idea" placeholder="e.g. Build a food delivery app..."
-        onkeydown="if(event.key==='Enter')launch()"/>
-      <button class="launch-btn" id="btn" onclick="launch()">Launch</button>
+    <div style="display:flex;gap:8px">
+      <input id="idea" placeholder="e.g. Build a food delivery app with payments and real-time tracking..."
+        onkeydown="if(event.key==='Enter')launch()"
+        style="flex:1;padding:10px 14px;font-size:14px;border-radius:8px;border:0.5px solid #ddd;outline:none;color:#1a1a2e"/>
+      <button id="btn" onclick="launch()"
+        style="padding:10px 24px;background:#534AB7;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500">
+        Launch
+      </button>
     </div>
   </div>
+
   <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
-  <div id="projects-panel"></div>
   <div class="grid" id="grid"></div>
   <div id="result-area"></div>
   <div id="meeting-area"></div>
+  <div id="workforce-area"></div>
+  <div id="optimize-area"></div>
   <div id="code-area"></div>
 </div>
+
 <script>
 const AGENTS = [
   { key:"pm",        label:"PM Agent",        role:"Requirements",   color:"#534AB7" },
@@ -144,6 +154,7 @@ let currentBuildFiles = null
 let ceoMode = false
 let selectedFile = 0
 let buildAbortController = null
+let savedProjects = []
 
 function toggleCEO() {
   ceoMode = document.getElementById("ceo-toggle").checked
@@ -156,7 +167,7 @@ function getDetails(key, d) {
   if (key==="architect") return `<div>Frontend: ${d.frontend}</div><div>Backend: ${d.backend}</div><div>DB: ${d.database}</div>`
   if (key==="dev") return `<div>Est. hours: <b>${d.estimated_hours}h</b></div><div>Complexity: <b>${d.complexity}</b></div><div>Modules: ${(d.modules||[]).length}</div>`
   if (key==="qa") return (d.risk_areas||[]).slice(0,2).map(r=>`<div>• ${r}</div>`).join("")
-  if (key==="devops") return `<div>${d.infrastructure}</div><div style="color:#0F6E56;font-weight:600;margin-top:4px">$${d.monthly_cost_usd}/mo</div>`
+  if (key==="devops") return `<div>${d.infrastructure}</div><div style="color:#0F6E56;font-weight:500;margin-top:3px">$${d.monthly_cost_usd}/mo</div>`
   if (key==="marketing") return (d.channels||[]).slice(0,2).map(c=>`<div>• ${c}</div>`).join("")
   return ""
 }
@@ -164,7 +175,7 @@ function getDetails(key, d) {
 function initCards() {
   const grid = document.getElementById("grid")
   grid.innerHTML = AGENTS.map((a,i) => `
-    <div class="card" id="card-${a.key}" style="transition-delay:${i*0.08}s">
+    <div class="agent-card" id="card-${a.key}" style="transition-delay:${i*0.06}s">
       <div class="card-header">
         <div class="dot" id="dot-${a.key}"></div>
         <span class="card-label">${a.label}</span>
@@ -190,13 +201,13 @@ function setActive(key) {
 function setDone(key, data) {
   const a = AGENTS.find(x => x.key===key)
   const card = document.getElementById("card-"+key)
-  const dot  = document.getElementById("dot-"+key)
-  const details = document.getElementById("details-"+key)
   card.classList.remove("active"); card.classList.add("done")
   card.style.borderLeftColor = a.color
+  const dot = document.getElementById("dot-"+key)
   dot.classList.remove("thinking"); dot.style.background = a.color
   document.getElementById("status-"+key).textContent = "Done"
   document.getElementById("status-"+key).style.color = a.color
+  const details = document.getElementById("details-"+key)
   details.innerHTML = getDetails(key, data)
   details.classList.remove("reveal"); void details.offsetWidth; details.classList.add("reveal")
 }
@@ -205,21 +216,18 @@ function setProgress(pct) {
   document.getElementById("progress").style.width = pct + "%"
 }
 
-function escapeHtml(text) {
-  return text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+function escapeHtml(t) {
+  return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
 }
 
 function agentInitials(name) {
   return name.split(" ").slice(0,2).map(w=>w[0]).join("")
 }
 
-let savedProjects = []
-
-function rerunProject(index) {
-  const p = savedProjects[index]
+function rerunProject(i) {
+  const p = savedProjects[i]
   if (!p) return
-  const idea = p.idea || p.project_name || ""
-  document.getElementById("idea").value = idea
+  document.getElementById("idea").value = p.idea || p.project_name || ""
   document.getElementById("idea").focus()
   window.scrollTo({ top: 0, behavior: "smooth" })
 }
@@ -228,66 +236,62 @@ async function loadProjects() {
   try {
     const res = await fetch("/projects")
     const data = await res.json()
-    const projects = data.projects || []
-    savedProjects = projects
+    savedProjects = data.projects || []
     const panel = document.getElementById("projects-panel")
-    if (projects.length === 0) { panel.innerHTML = ""; return }
+    if (savedProjects.length === 0) { panel.innerHTML = ""; return }
     panel.innerHTML = `
-    <div class="projects-panel">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-        <h3 style="font-size:15px;color:#1a1a2e">Past Projects</h3>
-        <span style="font-size:12px;color:#888">${projects.length} saved in Firestore</span>
+    <div class="past-panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span style="font-size:13px;font-weight:500;color:#1a1a2e">Past projects</span>
+        <span style="font-size:11px;color:#999">${savedProjects.length} saved in Firestore</span>
       </div>
-      ${projects.map((p,i) => `
-      <div class="project-item" onclick="rerunProject(${i})">
-        <div class="project-dot"></div>
-        <div class="project-name">${p.project_name||'Unknown'}</div>
-        <div class="project-meta">${p.timeline_weeks||0}w · ${p.team_size||0} people · $${(p.total_cost_usd||0).toLocaleString()}</div>
-        <div class="project-badge">Rerun</div>
-      </div>`).join("")}
+      <div>
+        ${savedProjects.map((p,i)=>`
+        <span class="past-tag" onclick="rerunProject(${i})">
+          ${p.project_name||'Unknown'}
+          <span style="color:#bbb;font-size:10px">${p.timeline_weeks||0}w · $${(p.total_cost_usd||0).toLocaleString()}</span>
+        </span>`).join("")}
+      </div>
     </div>`
-  } catch(e) {
-    console.log("Projects load error:", e)
-  }
+  } catch(e) { console.log("Projects error:", e) }
 }
 
 function getActionBtns() {
   return `
   <div class="action-btns">
-    <button class="btn-build"   id="build-btn"   onclick="buildApp()">Build This App — Generate Code</button>
-    <button class="btn-gitlab"  id="gitlab-btn"  onclick="pushToGitLab()">Push to GitLab</button>
-    <button class="btn-github"  id="github-btn"  onclick="pushToGitHub()">Push to GitHub</button>
-    <button class="btn-meeting" id="meeting-btn" onclick="runMeeting()">Run Team Meeting</button>
-    <div style="background:#ffffff11;border-radius:8px;padding:12px;margin-top:4px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="font-size:13px;font-weight:600;color:#ccc">Reduce Cost by</span>
-        <span id="slider-label" style="font-size:18px;font-weight:700;color:#F4A460">20%</span>
+    <div class="action-row">
+      <button class="btn-build" id="build-btn" onclick="buildApp()">Build This App</button>
+      <button class="btn-meeting" id="meeting-btn" onclick="runMeeting()">Team Meeting</button>
+    </div>
+    <div class="action-row">
+      <button class="btn-gitlab" id="gitlab-btn" onclick="pushToGitLab()">Push to GitLab</button>
+      <button class="btn-github" id="github-btn" onclick="pushToGitHub()">Push to GitHub</button>
+    </div>
+    <div class="slider-block" style="background:#ffffff0f">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:12px;font-weight:500;color:#ccc">Reduce Cost by</span>
+        <span id="slider-label" style="font-size:16px;font-weight:500;color:#F4A460">20%</span>
       </div>
       <input type="range" id="cost-slider" min="10" max="70" value="20" step="5"
         oninput="
-          document.getElementById('slider-label').textContent=this.value+'%';
           const pct=parseInt(this.value);
-          const meetBtn=document.getElementById('meeting-btn');
-          if(meetBtn){
-            if(pct<=20) meetBtn.textContent='Run Team Meeting';
-            else if(pct<=40) meetBtn.textContent='Run Team Meeting — Review '+pct+'% Cuts';
-            else if(pct<=60) meetBtn.textContent='Run Team Meeting — Debate '+pct+'% Reduction';
-            else meetBtn.textContent='Run Team Meeting — Crisis Mode '+pct+'% Cuts';
-          }
+          document.getElementById('slider-label').textContent=pct+'%';
+          const mb=document.getElementById('meeting-btn');
+          if(mb){if(pct<=20)mb.textContent='Team Meeting';else if(pct<=40)mb.textContent='Meeting — Review '+pct+'% Cuts';else mb.textContent='Meeting — Crisis '+pct+'% Cuts';}
         "
-        style="width:100%;accent-color:#F4A460;cursor:pointer;margin-bottom:6px"/>
-      <div style="display:flex;justify-content:space-between;font-size:10px;color:#888;margin-bottom:10px">
-        <span>10% small cuts</span><span>40% moderate</span><span>70% aggressive</span>
+        style="width:100%;accent-color:#F4A460;cursor:pointer;margin-bottom:4px"/>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:#888;margin-bottom:8px">
+        <span>10% small</span><span>40% moderate</span><span>70% aggressive</span>
       </div>
       <button onclick="optimizeBudget(parseInt(document.getElementById('cost-slider').value))"
-        style="width:100%;padding:12px;background:#854F0B;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">
+        style="width:100%;padding:10px;background:#854F0B;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500">
         Optimize Budget
       </button>
     </div>
-    <div style="background:#ffffff11;border-radius:8px;padding:12px;margin-top:4px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="font-size:13px;font-weight:600;color:#ccc">Add Developers</span>
-        <span id="dev-label" style="font-size:18px;font-weight:700;color:#4FC3F7">+1 dev</span>
+    <div class="slider-block" style="background:#ffffff0f">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:12px;font-weight:500;color:#ccc">Add Developers</span>
+        <span id="dev-label" style="font-size:16px;font-weight:500;color:#4FC3F7">+1 dev</span>
       </div>
       <input type="range" id="dev-slider" min="1" max="5" value="1" step="1"
         oninput="
@@ -295,12 +299,12 @@ function getActionBtns() {
           document.getElementById('dev-label').textContent='+'+v+' dev'+(v>1?'s':'');
           document.getElementById('workforce-btn').textContent='Calculate Impact of +'+v+' Developer'+(v>1?'s':'');
         "
-        style="width:100%;accent-color:#4FC3F7;cursor:pointer;margin-bottom:6px"/>
-      <div style="display:flex;justify-content:space-between;font-size:10px;color:#888;margin-bottom:10px">
+        style="width:100%;accent-color:#4FC3F7;cursor:pointer;margin-bottom:4px"/>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:#888;margin-bottom:8px">
         <span>+1 fast</span><span>+3 balanced</span><span>+5 max</span>
       </div>
       <button id="workforce-btn" onclick="optimizeWorkforce(parseInt(document.getElementById('dev-slider').value))"
-        style="width:100%;padding:12px;background:#185FA5;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">
+        style="width:100%;padding:10px;background:#185FA5;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500">
         Calculate Impact of +1 Developer
       </button>
     </div>
@@ -316,34 +320,37 @@ function renderResult(data) {
       <div class="pitch-header">
         <div>
           <div class="pitch-title">${data.project_name}</div>
-          <div style="color:#888;font-size:13px;margin-top:4px">${data.description}</div>
+          <div style="color:#888;font-size:13px;margin-top:3px">${data.description}</div>
         </div>
         <span class="pitch-badge">CEO Mode</span>
       </div>
       <div class="pitch-metrics">
-        <div class="pitch-metric"><div class="pitch-metric-val">${data.timeline_weeks}w</div><div class="pitch-metric-lbl">Timeline</div></div>
-        <div class="pitch-metric"><div class="pitch-metric-val">${data.team_size}</div><div class="pitch-metric-lbl">Team size</div></div>
-        <div class="pitch-metric"><div class="pitch-metric-val">$${(data.total_cost_usd/1000).toFixed(0)}k</div><div class="pitch-metric-lbl">Investment</div></div>
+        <div class="pitch-metric"><div class="pitch-metric-val">${data.timeline_weeks||'?'}w</div><div class="pitch-metric-lbl">Timeline</div></div>
+        <div class="pitch-metric"><div class="pitch-metric-val">${data.team_size||'?'}</div><div class="pitch-metric-lbl">Team size</div></div>
+        <div class="pitch-metric"><div class="pitch-metric-val">$${data.total_cost_usd?(data.total_cost_usd/1000).toFixed(0)+'k':'?'}</div><div class="pitch-metric-lbl">Investment</div></div>
         <div class="pitch-metric"><div class="pitch-metric-val">$${d?.devops?.monthly_cost_usd||0}</div><div class="pitch-metric-lbl">Infra/mo</div></div>
       </div>
       <div class="pitch-section"><h3>Tech stack</h3>${(d?.dev?.tech_stack||[]).map(t=>`<span class="tag">${t}</span>`).join("")}</div>
-      <div class="pitch-section"><h3>Target audience</h3><p style="font-size:14px;color:#333">${d?.marketing?.target_audience||""}</p></div>
-      <div class="pitch-section"><h3>Go-to-market</h3>${(d?.marketing?.gtm_phases||[]).map(p=>`<div style="font-size:13px;color:#444;margin-bottom:4px">• ${p.replace(/^Phase \d+:\s*/i,"")}</div>`).join("")}</div>
+      <div class="pitch-section"><h3>Target audience</h3><p style="font-size:13px;color:#444">${d?.marketing?.target_audience||""}</p></div>
+      <div class="pitch-section"><h3>Go-to-market</h3>${(d?.marketing?.gtm_phases||[]).map(p=>`<div style="font-size:13px;color:#444;margin-bottom:3px">• ${p.replace(/^Phase \d+:\s*/i,"")}</div>`).join("")}</div>
       <div class="pitch-section"><h3>Risks</h3>${(data.top_risks||[]).map(r=>`<span class="tag tag-red">⚠ ${r}</span>`).join("")}</div>
       <div class="pitch-section"><h3>KPIs</h3>${(d?.marketing?.kpis||[]).map(k=>`<span class="tag tag-green">${k}</span>`).join("")}</div>
-      <div class="pitch-section"><h3>Sprint plan</h3>${(d?.pm?.sprints||[]).map(s=>`<div style="font-size:13px;color:#444;margin-bottom:4px">• ${s.replace(/^Sprint \d+:\s*/i,"")}</div>`).join("")}</div>
+      <div class="pitch-section"><h3>Sprint plan</h3>${(d?.pm?.sprints||[]).map(s=>`<div style="font-size:13px;color:#444;margin-bottom:3px">• ${s.replace(/^Sprint \d+:\s*/i,"")}</div>`).join("")}</div>
       ${getActionBtns()}
     </div>`
   } else {
     area.innerHTML = `
     <div class="summary">
-      <h2 style="font-size:16px;margin-bottom:1rem">${data.project_name} — Executive Summary</h2>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <h2 style="font-size:15px;font-weight:500;color:#fff">${data.project_name} — Executive Summary</h2>
+        <span style="font-size:10px;color:#666">GitLab · Firestore · Arize</span>
+      </div>
       <div class="metrics">
         <div class="metric"><div class="metric-label">Timeline</div><div class="metric-value">${data.timeline_weeks} weeks</div></div>
         <div class="metric"><div class="metric-label">Team size</div><div class="metric-value">${data.team_size} people</div></div>
         <div class="metric"><div class="metric-label">Est. cost</div><div class="metric-value">$${data.total_cost_usd?.toLocaleString()}</div></div>
       </div>
-      <div style="font-size:12px;color:#888;margin-bottom:6px">Top risks</div>
+      <div style="font-size:11px;color:#888;margin-bottom:5px">Top risks</div>
       ${(data.top_risks||[]).map(r=>`<div class="risk-item">• ${r}</div>`).join("")}
       ${getActionBtns()}
     </div>`
@@ -360,23 +367,23 @@ function renderCodePanel(files) {
     area.innerHTML = `
     <div class="code-panel">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-        <h3 style="font-size:15px;color:#1a1a2e">${currentData.project_name} — Generated Code</h3>
-        <span style="font-size:12px;color:#888">${files.length} files generated</span>
+        <h3 style="font-size:14px;color:#1a1a2e;font-weight:500">${currentData.project_name} — Generated Code</h3>
+        <span style="font-size:11px;color:#999">${files.length} files</span>
       </div>
-      <div style="display:flex;gap:16px">
-        <div style="width:200px;flex-shrink:0">
+      <div style="display:flex;gap:12px">
+        <div style="width:180px;flex-shrink:0">
           ${files.map((f,i)=>`
           <div class="file-tab ${i===selectedFile?'active':''}" onclick="selectFile(${i})">
-            <div style="font-weight:500">${f.filename.split("/").pop()}</div>
+            <div style="font-weight:500;font-size:12px">${f.filename.split("/").pop()}</div>
             <div style="font-size:10px;color:#aaa">${f.filename}</div>
           </div>`).join("")}
         </div>
         <div style="flex:1;min-width:0">
-          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-            <span style="font-size:12px;font-weight:600;color:#534AB7">${files[selectedFile].filename}</span>
-            <span style="font-size:11px;color:#888">${files[selectedFile].language}</span>
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+            <span style="font-size:11px;font-weight:500;color:#534AB7">${files[selectedFile].filename}</span>
+            <span style="font-size:10px;color:#aaa">${files[selectedFile].language}</span>
           </div>
-          <pre style="background:#1a1a2e;color:#e0e0e0;padding:1rem;border-radius:8px;overflow:auto;font-size:12px;max-height:420px;line-height:1.6;white-space:pre-wrap">${escapeHtml(files[selectedFile].content)}</pre>
+          <pre style="background:#1a1a2e;color:#e0e0e0;padding:1rem;border-radius:8px;overflow:auto;font-size:12px;max-height:400px;line-height:1.6;white-space:pre-wrap">${escapeHtml(files[selectedFile].content)}</pre>
         </div>
       </div>
     </div>`
@@ -391,78 +398,67 @@ async function buildApp() {
     buildAbortController.abort()
     buildAbortController = null
     const btn = document.getElementById("build-btn")
-    btn.textContent = "Build This App — Generate Code"
-    btn.style.background = "#0F6E56"
-    btn.disabled = false
-    document.getElementById("code-area").innerHTML = `
-      <div class="code-panel">
-        <p style="color:#854F0B;font-size:13px">Generation cancelled. Edit your idea above and try again.</p>
-      </div>`
+    btn.textContent = "Build This App"; btn.style.background = "#0F6E56"; btn.disabled = false
+    document.getElementById("code-area").innerHTML = `<div class="code-panel"><p style="color:#854F0B;font-size:13px">Cancelled. Edit your idea and try again.</p></div>`
     return
   }
   buildAbortController = new AbortController()
   const btn = document.getElementById("build-btn")
-  btn.textContent = "Abort Generation"
-  btn.style.background = "#993C1D"
-  btn.disabled = false
+  btn.textContent = "Abort"; btn.style.background = "#993C1D"; btn.disabled = false
   document.getElementById("code-area").innerHTML = `
     <div class="code-panel">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-        <h3 style="font-size:15px;color:#1a1a2e">Generating codebase...</h3>
-        <span style="font-size:12px;color:#888">5 files — takes ~2 mins</span>
+      <div style="display:flex;justify-content:space-between;margin-bottom:1rem">
+        <h3 style="font-size:14px;color:#1a1a2e;font-weight:500">Generating codebase...</h3>
+        <span style="font-size:11px;color:#999">5 files · ~2 mins</span>
       </div>
       <div class="typing"><span></span><span></span><span></span></div>
-      <p style="font-size:13px;color:#888;margin-top:8px">Gemini is writing your code files... Click "Abort Generation" to cancel.</p>
+      <p style="font-size:12px;color:#999;margin-top:8px">Gemini is writing your code... Click Abort to cancel.</p>
     </div>`
   try {
     const res = await fetch("/build", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ idea: document.getElementById("idea").value, project_name: currentData.project_name }),
       signal: buildAbortController.signal
     })
     const data = await res.json()
     if (data.error) {
-      document.getElementById("code-area").innerHTML = `<div class="code-panel"><p style="color:red">Error: ${data.error}</p></div>`
-      btn.textContent = "Build This App — Generate Code"; btn.style.background = "#0F6E56"; btn.disabled = false; buildAbortController = null
+      document.getElementById("code-area").innerHTML = `<div class="code-panel"><p style="color:red;font-size:13px">Error: ${data.error}</p></div>`
+      btn.textContent = "Build This App"; btn.style.background = "#0F6E56"; btn.disabled = false; buildAbortController = null
       return
     }
     currentBuildFiles = data.files || []
     selectedFile = 0
     renderCodePanel(currentBuildFiles)
-    btn.textContent = "Regenerate Code"; btn.style.background = "#0F6E56"; btn.disabled = false; buildAbortController = null
+    btn.textContent = "Regenerate"; btn.style.background = "#0F6E56"; btn.disabled = false; buildAbortController = null
     document.getElementById("gitlab-btn").style.display = "block"
     document.getElementById("github-btn").style.display = "block"
     document.getElementById("code-area").scrollIntoView({ behavior: "smooth" })
   } catch(e) {
-    if (e.name === "AbortError") {
-      document.getElementById("code-area").innerHTML = `<div class="code-panel"><p style="color:#854F0B;font-size:13px">Generation cancelled.</p></div>`
-    } else {
-      document.getElementById("code-area").innerHTML = `<div class="code-panel"><p style="color:red">Error: ${e.message}</p></div>`
-    }
-    btn.textContent = "Build This App — Generate Code"; btn.style.background = "#0F6E56"; btn.disabled = false; buildAbortController = null
+    if (e.name !== "AbortError") document.getElementById("code-area").innerHTML = `<div class="code-panel"><p style="color:red;font-size:13px">Error: ${e.message}</p></div>`
+    else document.getElementById("code-area").innerHTML = `<div class="code-panel"><p style="color:#854F0B;font-size:13px">Cancelled.</p></div>`
+    btn.textContent = "Build This App"; btn.style.background = "#0F6E56"; btn.disabled = false; buildAbortController = null
   }
 }
 
 async function pushToGitLab() {
   if (!currentData || !currentBuildFiles) return
   const btn = document.getElementById("gitlab-btn")
-  btn.textContent = "Pushing to GitLab..."; btn.disabled = true
+  btn.textContent = "Pushing..."; btn.disabled = true
   const res = await fetch("/push-gitlab", {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ project_name: currentData.project_name, description: currentData.description, files: currentBuildFiles })
   })
   const data = await res.json()
   if (data.success) {
-    btn.textContent = "Open GitLab Repo"; btn.style.background = "#FC6D26"; btn.disabled = false
+    btn.textContent = "Open GitLab"; btn.style.background = "#FC6D26"; btn.disabled = false
     btn.onclick = () => window.open(data.project_url, "_blank")
     document.getElementById("code-area").insertAdjacentHTML("afterbegin", `
-      <div style="background:#FC6D2611;border:1px solid #FC6D2644;border-radius:8px;padding:12px 16px;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;animation:fadeSlideIn 0.5s ease forwards">
+      <div style="background:#FC6D2611;border:0.5px solid #FC6D2644;border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
         <div>
-          <div style="font-weight:600;color:#FC6D26;font-size:14px">Pushed to GitLab!</div>
-          <div style="font-size:12px;color:#555;margin-top:2px">${data.files_pushed} files · ${data.issues_created} issues · Sprint 1 milestone</div>
+          <div style="font-weight:500;color:#FC6D26;font-size:13px">Pushed to GitLab!</div>
+          <div style="font-size:11px;color:#777;margin-top:2px">${data.files_pushed} files · ${data.issues_created} issues · Sprint 1 milestone</div>
         </div>
-        <a href="${data.project_url}" target="_blank" style="padding:8px 16px;background:#FC6D26;color:#fff;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600">Open GitLab</a>
+        <a href="${data.project_url}" target="_blank" style="padding:6px 14px;background:#FC6D26;color:#fff;border-radius:6px;text-decoration:none;font-size:12px;font-weight:500">Open</a>
       </div>`)
   } else {
     btn.textContent = "Push to GitLab"; btn.disabled = false
@@ -473,23 +469,15 @@ async function pushToGitLab() {
 async function pushToGitHub() {
   if (!currentData || !currentBuildFiles) return
   const btn = document.getElementById("github-btn")
-  btn.textContent = "Pushing to GitHub..."; btn.disabled = true
+  btn.textContent = "Pushing..."; btn.disabled = true
   const res = await fetch("/push-github", {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ project_name: currentData.project_name, description: currentData.description, files: currentBuildFiles })
   })
   const data = await res.json()
   if (data.success) {
-    btn.textContent = "Open GitHub Repo"; btn.style.background = "#0F6E56"; btn.disabled = false
+    btn.textContent = "Open GitHub"; btn.style.background = "#0F6E56"; btn.disabled = false
     btn.onclick = () => window.open(data.repo_url, "_blank")
-    document.getElementById("code-area").insertAdjacentHTML("afterbegin", `
-      <div style="background:#0F6E5611;border:1px solid #0F6E5644;border-radius:8px;padding:12px 16px;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;animation:fadeSlideIn 0.5s ease forwards">
-        <div>
-          <div style="font-weight:600;color:#0F6E56;font-size:14px">Pushed to GitHub!</div>
-          <div style="font-size:12px;color:#555;margin-top:2px">${data.files_pushed} files · ${data.issues_created} issues</div>
-        </div>
-        <a href="${data.repo_url}" target="_blank" style="padding:8px 16px;background:#0F6E56;color:#fff;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600">Open Repo</a>
-      </div>`)
   } else {
     btn.textContent = "Push to GitHub"; btn.disabled = false
     alert("GitHub error: " + data.error)
@@ -499,260 +487,176 @@ async function pushToGitHub() {
 async function runMeeting() {
   if (!currentData) return
   const btn = document.getElementById("meeting-btn")
-  btn.textContent = "Agents are meeting..."; btn.disabled = true
+  btn.disabled = true
+  const sliderVal = document.getElementById("cost-slider")
+  const optimizePct = sliderVal ? parseInt(sliderVal.value) : 0
+  const meetingContext = optimizePct > 20 ? `The team is discussing a ${optimizePct}% budget cut. Agents should debate what to cut and negotiate trade-offs.` : ""
   document.getElementById("meeting-area").innerHTML = `
     <div class="meeting-panel">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem">
-        <div style="width:8px;height:8px;border-radius:50%;background:#185FA5;animation:pulse 0.8s infinite"></div>
-        <h3 style="font-size:15px;color:#1a1a2e;margin:0">Team Meeting — Live Discussion</h3>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:1rem">
+        <div style="width:7px;height:7px;border-radius:50%;background:#185FA5;animation:pulse 0.8s infinite"></div>
+        <h3 style="font-size:14px;color:#1a1a2e;font-weight:500">Team Meeting — Live Discussion</h3>
       </div>
       <div class="typing"><span></span><span></span><span></span></div>
     </div>`
-  const sliderVal = document.getElementById("cost-slider")
-  const optimizePct = sliderVal ? parseInt(sliderVal.value) : 0
-  const meetingContext = optimizePct > 20
-    ? `IMPORTANT: The team is discussing a ${optimizePct}% budget cut. Agents should debate what to cut, push back on cuts, and negotiate trade-offs.`
-    : ""
   const res = await fetch("/meeting", {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      project_name: currentData.project_name,
-      plan: currentData,
-      optimization_context: meetingContext
-    })
+    body: JSON.stringify({ project_name: currentData.project_name, plan: currentData, optimization_context: meetingContext })
   })
   const data = await res.json()
   if (data.error) {
-    document.getElementById("meeting-area").innerHTML = `<div class="meeting-panel"><p style="color:red">Error: ${data.error}</p></div>`
-    btn.textContent = "Run Team Meeting"; btn.disabled = false; return
+    document.getElementById("meeting-area").innerHTML = `<div class="meeting-panel"><p style="color:red;font-size:13px">Error: ${data.error}</p></div>`
+    btn.disabled = false; return
   }
-  const messages = data.messages || []
   document.getElementById("meeting-area").innerHTML = `
     <div class="meeting-panel">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.2rem">
-        <div style="width:8px;height:8px;border-radius:50%;background:#185FA5"></div>
-        <h3 style="font-size:15px;color:#1a1a2e;margin:0">Team Meeting — Live Discussion</h3>
-        <span style="margin-left:auto;font-size:11px;color:#888">${currentData.project_name}</span>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:1rem">
+        <div style="width:7px;height:7px;border-radius:50%;background:#185FA5"></div>
+        <h3 style="font-size:14px;color:#1a1a2e;font-weight:500">Team Meeting</h3>
+        <span style="margin-left:auto;font-size:11px;color:#999">${currentData.project_name}</span>
       </div>
       <div id="chat-log"></div>
     </div>`
   const log = document.getElementById("chat-log")
-  for (let i = 0; i < messages.length; i++) {
-    await new Promise(r => setTimeout(r, 800))
-    const msg = messages[i]
+  for (let i = 0; i < (data.messages||[]).length; i++) {
+    await new Promise(r => setTimeout(r, 700))
+    const msg = data.messages[i]
     const color = AGENT_COLORS[msg.agent] || "#534AB7"
-    const bubbleClass = "bubble-" + (msg.type || "normal")
-    const msgEl = document.createElement("div")
-    msgEl.className = "chat-msg"
-    msgEl.innerHTML = `
+    const el = document.createElement("div")
+    el.className = "chat-msg"
+    el.innerHTML = `
       <div class="chat-avatar" style="background:${color}">${agentInitials(msg.agent)}</div>
       <div style="flex:1">
         <div class="chat-name" style="color:${color}">${msg.agent}</div>
-        <div class="chat-bubble ${bubbleClass}">${msg.message}</div>
+        <div class="chat-bubble bubble-${msg.type||'normal'}">${msg.message}</div>
       </div>`
-    log.appendChild(msgEl)
-    msgEl.scrollIntoView({ behavior:"smooth", block:"nearest" })
+    log.appendChild(el)
+    el.scrollIntoView({ behavior:"smooth", block:"nearest" })
   }
   btn.textContent = "Re-run Meeting"; btn.disabled = false
+}
+
+async function optimizeBudget(percent) {
+  if (!currentData) return
+  const btn = event.target
+  btn.textContent = "Optimizing..."; btn.disabled = true
+  const existing = document.getElementById("optimize-result")
+  if (existing) existing.remove()
+  const loadDiv = document.createElement("div")
+  loadDiv.id = "optimize-result"
+  loadDiv.style.cssText = "background:#fff;border-radius:12px;border:0.5px solid #e0e0dc;padding:1.2rem;margin-top:1rem;animation:fadeUp 0.4s ease"
+  loadDiv.innerHTML = `<h3 style="font-size:14px;color:#854F0B;font-weight:500;margin-bottom:10px">Optimizing by ${percent}%...</h3><div class="typing"><span></span><span></span><span></span></div>`
+  document.getElementById("optimize-area").appendChild(loadDiv)
+  loadDiv.scrollIntoView({ behavior:"smooth" })
+  try {
+    const res = await fetch("/optimize", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idea: document.getElementById("idea").value, project_name: currentData.project_name, current_plan: currentData, reduce_by_percent: percent })
+    })
+    const data = await res.json()
+    if (data.error) { loadDiv.innerHTML = `<p style="color:red;font-size:13px">${data.error}</p>`; btn.textContent="Optimize Budget"; btn.disabled=false; return }
+    const savings = data.savings||0
+    const savPct = Math.round((savings/(data.original_cost||1))*100)
+    loadDiv.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <h3 style="font-size:14px;color:#854F0B;font-weight:500">${percent}% Cost Reduction Plan</h3>
+        <span style="background:#854F0B11;color:#854F0B;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:500">Saved $${savings.toLocaleString()}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1rem">
+        <div style="background:#f8f8f6;border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:11px;color:#999;margin-bottom:3px">New cost</div>
+          <div style="font-size:18px;font-weight:500;color:#854F0B">$${data.total_cost_usd?.toLocaleString()}</div>
+          <div style="font-size:11px;color:#bbb">was $${data.original_cost?.toLocaleString()}</div>
+        </div>
+        <div style="background:#f8f8f6;border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:11px;color:#999;margin-bottom:3px">Timeline</div>
+          <div style="font-size:18px;font-weight:500">${data.timeline_weeks} weeks</div>
+        </div>
+        <div style="background:#f8f8f6;border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:11px;color:#999;margin-bottom:3px">Team</div>
+          <div style="font-size:18px;font-weight:500">${data.team_size} people</div>
+        </div>
+      </div>
+      <div style="height:5px;background:#f0f0ec;border-radius:3px;overflow:hidden;margin-bottom:4px">
+        <div id="sav-fill" style="height:100%;background:#0F6E56;border-radius:3px;width:0%;transition:width 1s ease"></div>
+      </div>
+      <div style="font-size:11px;color:#0F6E56;font-weight:500;margin-bottom:1rem">${savPct}% saved</div>
+      <div style="margin-bottom:1rem">
+        <div style="font-size:11px;color:#999;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px">What was cut</div>
+        ${(data.changes_made||[]).map(c=>`<div style="font-size:13px;color:#444;margin-bottom:3px">• ${c}</div>`).join("")}
+      </div>
+      <div style="background:#FFF8E1;border-radius:8px;padding:10px;margin-bottom:1rem">
+        <div style="font-size:11px;color:#7a5c00;font-weight:500;margin-bottom:3px">Summary</div>
+        <div style="font-size:13px;color:#7a5c00">${data.optimization_summary||""}</div>
+      </div>
+      <div style="margin-bottom:1rem">
+        <div style="font-size:11px;color:#999;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px">New risks</div>
+        ${(data.top_risks||[]).map(r=>`<div style="font-size:13px;color:#cc2200;margin-bottom:3px">⚠ ${r}</div>`).join("")}
+      </div>
+      <button onclick="currentData=Object.assign({},currentData,{total_cost_usd:${data.total_cost_usd},timeline_weeks:${data.timeline_weeks},team_size:${data.team_size}});renderResult(currentData);document.getElementById('optimize-result').remove()"
+        style="width:100%;padding:10px;background:#0F6E56;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500">
+        Accept Plan
+      </button>`
+    setTimeout(() => { const f=document.getElementById("sav-fill"); if(f) f.style.width=savPct+"%" }, 200)
+  } catch(e) { loadDiv.innerHTML = `<p style="color:red;font-size:13px">${e.message}</p>` }
+  btn.textContent = "Optimize Budget"; btn.disabled = false
 }
 
 async function optimizeWorkforce(additionalDevs) {
   if (!currentData) return
   const btn = document.getElementById("workforce-btn")
   btn.textContent = "Calculating..."; btn.disabled = true
-
-  const existing = document.getElementById("workforce-panel")
+  const existing = document.getElementById("workforce-result")
   if (existing) existing.remove()
-
-  const loadingDiv = document.createElement("div")
-  loadingDiv.id = "workforce-panel"
-  loadingDiv.style.cssText = "background:#fff;border-radius:12px;border:2px solid #185FA544;padding:1.5rem;margin-top:1rem;animation:fadeSlideIn 0.5s ease forwards"
-  loadingDiv.innerHTML = `
-    <h3 style="font-size:15px;color:#185FA5;margin-bottom:1rem">Calculating impact of +${additionalDevs} developer${additionalDevs>1?'s':''}...</h3>
-    <div class="typing"><span></span><span></span><span></span></div>`
-  document.getElementById("result-area").insertAdjacentElement("afterend", loadingDiv)
-  loadingDiv.scrollIntoView({ behavior: "smooth" })
-
+  const loadDiv = document.createElement("div")
+  loadDiv.id = "workforce-result"
+  loadDiv.style.cssText = "background:#fff;border-radius:12px;border:0.5px solid #e0e0dc;padding:1.2rem;margin-top:1rem;animation:fadeUp 0.4s ease"
+  loadDiv.innerHTML = `<h3 style="font-size:14px;color:#185FA5;font-weight:500;margin-bottom:10px">Calculating +${additionalDevs} developer impact...</h3><div class="typing"><span></span><span></span><span></span></div>`
+  document.getElementById("workforce-area").appendChild(loadDiv)
+  loadDiv.scrollIntoView({ behavior:"smooth" })
   try {
     const res = await fetch("/workforce", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        idea: document.getElementById("idea").value,
-        project_name: currentData.project_name,
-        current_plan: currentData,
-        additional_developers: additionalDevs
-      })
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idea: document.getElementById("idea").value, project_name: currentData.project_name, current_plan: currentData, additional_developers: additionalDevs })
     })
     const data = await res.json()
-
-    if (data.error) {
-      loadingDiv.innerHTML = `<p style="color:red">Error: ${data.error}</p>`
-      btn.textContent = "Calculate Impact of +"+additionalDevs+" Developer"+(additionalDevs>1?"s":"")
-      btn.disabled = false
-      return
-    }
-
-    const weeksSaved = data.weeks_saved || 0
-    const costIncrease = data.cost_increase || 0
-
-    loadingDiv.innerHTML = `
+    if (data.error) { loadDiv.innerHTML = `<p style="color:red;font-size:13px">${data.error}</p>`; btn.textContent="Calculate Impact of +"+additionalDevs+" Developer"+(additionalDevs>1?"s":""); btn.disabled=false; return }
+    const weeksSaved = data.weeks_saved||0
+    loadDiv.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-        <h3 style="font-size:15px;color:#185FA5">+${additionalDevs} Developer${additionalDevs>1?'s':''} Impact</h3>
-        <span style="background:#185FA511;color:#185FA5;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600">
-          ${weeksSaved > 0 ? weeksSaved+"w faster" : "No time savings"}
-        </span>
+        <h3 style="font-size:14px;color:#185FA5;font-weight:500">+${additionalDevs} Developer${additionalDevs>1?'s':''} Impact</h3>
+        <span style="background:#185FA511;color:#185FA5;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:500">${weeksSaved>0?weeksSaved+"w faster":"No time savings"}</span>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:1rem">
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:1rem">
         <div style="background:#f8f8f6;border-radius:8px;padding:12px">
-          <div style="font-size:11px;color:#888;margin-bottom:8px">Before vs After</div>
-          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
-            <span style="color:#888">Timeline:</span>
-            <span><s style="color:#aaa">${data.original_weeks}w</s> → <b style="color:#185FA5">${data.new_timeline_weeks}w</b></span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
-            <span style="color:#888">Team:</span>
-            <span><s style="color:#aaa">${data.original_team}</s> → <b style="color:#185FA5">${data.new_team_size}</b></span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:13px">
-            <span style="color:#888">Cost:</span>
-            <span><s style="color:#aaa">$${data.original_cost?.toLocaleString()}</s> → <b style="color:#cc2200">$${data.new_total_cost_usd?.toLocaleString()}</b></span>
-          </div>
+          <div style="font-size:11px;color:#999;margin-bottom:6px">Before → After</div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="color:#999">Timeline</span><span><s style="color:#ccc">${data.original_weeks}w</s> → <b style="color:#185FA5">${data.new_timeline_weeks}w</b></span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="color:#999">Team</span><span><s style="color:#ccc">${data.original_team}</s> → <b style="color:#185FA5">${data.new_team_size}</b></span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:#999">Cost</span><span><s style="color:#ccc">$${data.original_cost?.toLocaleString()}</s> → <b style="color:#cc2200">$${data.new_total_cost_usd?.toLocaleString()}</b></span></div>
         </div>
         <div style="background:#f8f8f6;border-radius:8px;padding:12px">
-          <div style="font-size:11px;color:#888;margin-bottom:8px">Trade-off</div>
-          <div style="font-size:14px;color:#185FA5;font-weight:600;margin-bottom:4px">⚡ ${weeksSaved}w faster</div>
-          <div style="font-size:14px;color:#cc2200;font-weight:600;margin-bottom:4px">💰 +$${costIncrease?.toLocaleString()}</div>
-          <div style="font-size:12px;color:#888">${data.efficiency_gain_percent||0}% efficiency gain</div>
+          <div style="font-size:11px;color:#999;margin-bottom:6px">Trade-off</div>
+          <div style="font-size:14px;color:#185FA5;font-weight:500;margin-bottom:3px">⚡ ${weeksSaved}w faster</div>
+          <div style="font-size:14px;color:#cc2200;font-weight:500;margin-bottom:3px">💰 +$${(data.cost_increase||0).toLocaleString()}</div>
+          <div style="font-size:11px;color:#999">${data.efficiency_gain_percent||0}% efficiency gain</div>
         </div>
       </div>
-      ${data.brooks_law_warning ? `
-      <div style="background:#FFEBEE;border-radius:8px;padding:12px;margin-bottom:1rem;border-left:3px solid #EF5350">
-        <div style="font-size:12px;font-weight:600;color:#C62828;margin-bottom:4px">⚠ Brooks Law Warning</div>
-        <div style="font-size:13px;color:#C62828">${data.brooks_law_message}</div>
-      </div>` : ""}
+      ${data.brooks_law_warning?`<div style="background:#FFEBEE;border-radius:8px;padding:10px;margin-bottom:1rem;border-left:2px solid #EF5350"><div style="font-size:11px;font-weight:500;color:#b71c1c;margin-bottom:3px">⚠ Brooks Law Warning</div><div style="font-size:13px;color:#b71c1c">${data.brooks_law_message}</div></div>`:""}
       <div style="margin-bottom:1rem">
-        <div style="font-size:12px;font-weight:600;color:#333;margin-bottom:6px">Parallel workstreams</div>
-        ${(data.parallel_workstreams||[]).map(w=>`<div style="font-size:13px;color:#444;margin-bottom:4px">• ${w}</div>`).join("")}
+        <div style="font-size:11px;color:#999;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px">Parallel workstreams</div>
+        ${(data.parallel_workstreams||[]).map(w=>`<div style="font-size:13px;color:#444;margin-bottom:3px">• ${w}</div>`).join("")}
       </div>
-      <div style="background:#E3F2FD;border-radius:8px;padding:12px;margin-bottom:1rem">
-        <div style="font-size:12px;font-weight:600;color:#185FA5;margin-bottom:4px">Recommendation</div>
+      <div style="background:#E3F2FD;border-radius:8px;padding:10px;margin-bottom:1rem">
+        <div style="font-size:11px;color:#185FA5;font-weight:500;margin-bottom:3px">Recommendation</div>
         <div style="font-size:13px;color:#185FA5">${data.recommendation}</div>
       </div>
       <div style="font-size:13px;color:#555;margin-bottom:1rem">${data.trade_off_summary}</div>
-      <button onclick="currentData=Object.assign({},currentData,{timeline_weeks:${data.new_timeline_weeks},team_size:${data.new_team_size},total_cost_usd:${data.new_total_cost_usd}});renderResult(currentData);document.getElementById('workforce-panel').remove()"
-        style="width:100%;padding:12px;background:#185FA5;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">
+      <button onclick="currentData=Object.assign({},currentData,{timeline_weeks:${data.new_timeline_weeks},team_size:${data.new_team_size},total_cost_usd:${data.new_total_cost_usd}});renderResult(currentData);document.getElementById('workforce-result').remove()"
+        style="width:100%;padding:10px;background:#185FA5;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500">
         Accept — Update Plan
       </button>`
-
-  } catch(e) {
-    loadingDiv.innerHTML = `<p style="color:red">Error: ${e.message}</p>`
-  }
+  } catch(e) { loadDiv.innerHTML = `<p style="color:red;font-size:13px">${e.message}</p>` }
   btn.textContent = "Calculate Impact of +"+additionalDevs+" Developer"+(additionalDevs>1?"s":"")
-  btn.disabled = false
-}
-
-async function optimizeBudget(percent) {
-  if (!currentData) return
-  const btn = event.target
-  btn.textContent = "Optimizing " + percent + "%..."
-  btn.disabled = true
-
-  const existing = document.getElementById("optimize-panel")
-  if (existing) existing.remove()
-
-  const loadingDiv = document.createElement("div")
-  loadingDiv.id = "optimize-panel"
-  loadingDiv.style.cssText = "background:#fff;border-radius:12px;border:2px solid #854F0B44;padding:1.5rem;margin-top:1rem;animation:fadeSlideIn 0.5s ease forwards"
-  loadingDiv.innerHTML = `
-    <h3 style="font-size:15px;color:#854F0B;margin-bottom:1rem">Optimizing budget by ${percent}%...</h3>
-    <div class="typing"><span></span><span></span><span></span></div>
-    <p style="font-size:13px;color:#888;margin-top:8px">Agents are renegotiating scope, staffing and timeline...</p>`
-  document.getElementById("result-area").insertAdjacentElement("afterend", loadingDiv)
-  loadingDiv.scrollIntoView({ behavior: "smooth" })
-
-  try {
-    const res = await fetch("/optimize", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        idea: document.getElementById("idea").value,
-        project_name: currentData.project_name,
-        current_plan: currentData,
-        reduce_by_percent: percent
-      })
-    })
-    const data = await res.json()
-
-    if (data.error) {
-      loadingDiv.innerHTML = `<p style="color:red">Error: ${data.error}</p>`
-      btn.textContent = "Optimize Budget"; btn.disabled = false
-      return
-    }
-
-    const savings = data.savings || 0
-    const savingsPct = Math.round((savings / (data.original_cost||1)) * 100)
-
-    loadingDiv.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-        <h3 style="font-size:15px;color:#854F0B">${percent}% Cost Reduction Plan</h3>
-        <span style="background:#854F0B11;color:#854F0B;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600">Saved $${savings.toLocaleString()}</span>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1rem">
-        <div style="background:#f8f8f6;border-radius:8px;padding:12px;text-align:center">
-          <div style="font-size:11px;color:#888;margin-bottom:4px">New cost</div>
-          <div style="font-size:20px;font-weight:700;color:#854F0B">$${data.total_cost_usd?.toLocaleString()}</div>
-          <div style="font-size:11px;color:#888">was $${data.original_cost?.toLocaleString()}</div>
-        </div>
-        <div style="background:#f8f8f6;border-radius:8px;padding:12px;text-align:center">
-          <div style="font-size:11px;color:#888;margin-bottom:4px">Timeline</div>
-          <div style="font-size:20px;font-weight:700">${data.timeline_weeks} weeks</div>
-        </div>
-        <div style="background:#f8f8f6;border-radius:8px;padding:12px;text-align:center">
-          <div style="font-size:11px;color:#888;margin-bottom:4px">Team size</div>
-          <div style="font-size:20px;font-weight:700">${data.team_size} people</div>
-        </div>
-      </div>
-      <div style="margin-bottom:1rem">
-        <div style="font-size:12px;color:#888;margin-bottom:4px">Savings achieved</div>
-        <div style="height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden;margin-bottom:4px">
-          <div id="savings-fill" style="height:100%;background:#0F6E56;border-radius:4px;width:0%;transition:width 1s ease"></div>
-        </div>
-        <div style="font-size:12px;color:#0F6E56;font-weight:600">${savingsPct}% saved</div>
-      </div>
-      <div style="margin-bottom:1rem">
-        <div style="font-size:12px;font-weight:600;color:#333;margin-bottom:6px">What was optimized</div>
-        ${(data.changes_made||[]).map(c=>`<div style="font-size:13px;color:#444;margin-bottom:4px">• ${c}</div>`).join("")}
-      </div>
-      <div style="background:#FFF3CD;border-radius:8px;padding:12px;margin-bottom:1rem">
-        <div style="font-size:12px;font-weight:600;color:#856404;margin-bottom:4px">Summary</div>
-        <div style="font-size:13px;color:#856404">${data.optimization_summary||""}</div>
-      </div>
-      <div style="margin-bottom:1rem">
-        <div style="font-size:12px;font-weight:600;color:#333;margin-bottom:6px">New risks</div>
-        ${(data.top_risks||[]).map(r=>`<div style="font-size:13px;color:#cc2200;margin-bottom:4px">⚠ ${r}</div>`).join("")}
-      </div>
-      <div style="display:flex;gap:8px">
-        <button onclick="optimizeBudget(parseInt(document.getElementById('cost-slider').value))"
-          style="flex:1;padding:10px;background:#854F0B;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">
-          Re-optimize
-        </button>
-        <button onclick="currentData=Object.assign({},currentData,{total_cost_usd:${data.total_cost_usd},timeline_weeks:${data.timeline_weeks},team_size:${data.team_size}});renderResult(currentData);document.getElementById('optimize-panel').remove()"
-          style="flex:1;padding:10px;background:#0F6E56;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">
-          Accept Plan
-        </button>
-      </div>`
-
-    setTimeout(() => {
-      const fill = document.getElementById("savings-fill")
-      if (fill) fill.style.width = savingsPct + "%"
-    }, 200)
-
-  } catch(e) {
-    loadingDiv.innerHTML = `<p style="color:red">Error: ${e.message}</p>`
-  }
-
-  btn.textContent = "Optimize Budget"
   btn.disabled = false
 }
 
@@ -764,6 +668,8 @@ async function launch() {
   currentData = null; currentBuildFiles = null; buildAbortController = null
   document.getElementById("result-area").innerHTML = ""
   document.getElementById("meeting-area").innerHTML = ""
+  document.getElementById("workforce-area").innerHTML = ""
+  document.getElementById("optimize-area").innerHTML = ""
   document.getElementById("code-area").innerHTML = ""
   setProgress(5); initCards()
   for (let i = 0; i < AGENTS.length; i++) {
@@ -779,16 +685,12 @@ async function launch() {
   currentData = await res.json()
   setProgress(60)
   for (let i = 0; i < AGENTS.length; i++) {
-    await new Promise(r => setTimeout(r, 180))
+    await new Promise(r => setTimeout(r, 160))
     setDone(AGENTS[i].key, currentData.departments[AGENTS[i].key])
     setProgress(60 + ((i+1)/AGENTS.length)*38)
   }
   setProgress(100)
-  setTimeout(() => {
-    renderResult(currentData)
-    setProgress(0)
-    loadProjects()
-  }, 300)
+  setTimeout(() => { renderResult(currentData); setProgress(0); loadProjects() }, 300)
   btn.disabled = false; btn.textContent = "Launch"
 }
 
