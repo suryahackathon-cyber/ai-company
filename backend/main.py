@@ -4,10 +4,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from google import genai
+from google.cloud import firestore as fs
 from dotenv import load_dotenv
 import os, json, traceback, base64, time, re
 import urllib.request
-import urllib.error
 import urllib.parse
 from datetime import datetime
 
@@ -18,44 +18,31 @@ GITHUB_TOKEN    = os.getenv("GITHUB_TOKEN")
 GITHUB_USERNAME = os.getenv("GITHUB_USERNAME")
 GITLAB_TOKEN    = os.getenv("GITLAB_TOKEN")
 GITLAB_USERNAME = os.getenv("GITLAB_USERNAME")
-MONGODB_URI     = os.getenv("MONGODB_URI")
 ARIZE_API_KEY   = os.getenv("ARIZE_API_KEY")
 ARIZE_SPACE_ID  = os.getenv("ARIZE_SPACE_ID")
 
 print(f"Google key loaded: {GOOGLE_API_KEY[:10]}..." if GOOGLE_API_KEY else "ERROR: No Google key!")
-print(f"GitLab user: {GITLAB_USERNAME}" if GITLAB_USERNAME else "ERROR: No GitLab username!")
-print(f"MongoDB: Connected" if MONGODB_URI else "ERROR: No MongoDB URI!")
-print(f"Arize: Connected" if ARIZE_API_KEY else "ERROR: No Arize key!")
+print(f"GitLab user: {GITLAB_USERNAME}" if GITLAB_USERNAME else "ERROR: No GitLab!")
 
 # Gemini client
 client = genai.Client(api_key=GOOGLE_API_KEY)
 
-# MongoDB client
-from motor.motor_asyncio import AsyncIOMotorClient
+# Firestore client
 try:
-    import certifi
-    mongo_client = AsyncIOMotorClient(
-        MONGODB_URI,
-        tlsCAFile=certifi.where(),
-        serverSelectionTimeoutMS=10000,
-        connectTimeoutMS=10000,
-        socketTimeoutMS=10000
-    )
-    db = mongo_client["ai_company"]
-    projects_collection = db["projects"]
-    print("MongoDB motor client created!")
-    MONGODB_ENABLED = True
-except Exception as me:
-    print(f"MongoDB connection failed (non-critical): {me}")
-    projects_collection = None
-    MONGODB_ENABLED = False
+    firestore_client = fs.Client(project="ai-team-hackathon")
+    projects_ref = firestore_client.collection("projects")
+    FIRESTORE_ENABLED = True
+    print("Firestore connected successfully!")
+except Exception as fe:
+    print(f"Firestore error (non-critical): {fe}")
+    FIRESTORE_ENABLED = False
+    projects_ref = None
 
-# Arize client
-# arize imported below
-
-
-
-print("Arize ready!")
+# Arize
+try:
+    print("Arize: Connected")
+except Exception as ae:
+    print(f"Arize error: {ae}")
 
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -103,6 +90,15 @@ class MeetingRequest(BaseModel):
     project_name: str
     plan: dict
 
+def clean_json(text):
+    text = text.strip()
+    if "```json" in text:
+        text = text.split("```json")[1].split("```")[0]
+    elif "```" in text:
+        text = text.split("```")[1].split("```")[0]
+    text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', text)
+    return text.strip()
+
 def gemini_generate(prompt, system_instruction=None, retries=3):
     for attempt in range(retries):
         try:
@@ -117,71 +113,57 @@ def gemini_generate(prompt, system_instruction=None, retries=3):
             return response
         except Exception as e:
             if "503" in str(e) or "UNAVAILABLE" in str(e):
-                wait = (attempt + 1) * 10
-                print(f"Gemini busy, retrying in {wait}s... (attempt {attempt+1}/{retries})")
+                wait = (attempt + 1) * 3
+                print(f"Gemini busy, retrying in {wait}s...")
                 time.sleep(wait)
             else:
                 raise e
     raise Exception("Gemini unavailable after retries")
 
-def clean_json(text):
-    text = text.strip()
-    if "```json" in text:
-        text = text.split("```json")[1].split("```")[0]
-    elif "```" in text:
-        text = text.split("```")[1].split("```")[0]
-    text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', text)
-    return text.strip()
-
-def log_to_arize(model_id, prompt, response_text, latency_ms, tokens=0):
+def log_to_arize(model_id, prompt, response_text, latency_ms):
     try:
-        import pandas as pd
-        from arize.pandas.logger import Client as ArizeLogger
-        from arize.utils.types import ModelTypes, Environments, Schema, Metrics
-        arize_logger = ArizeLogger(
-            space_id=ARIZE_SPACE_ID,
-            api_key=ARIZE_API_KEY
+        log_data = json.dumps({
+            "model_id": model_id,
+            "model_version": "gemini-2.5-flash",
+            "prediction_id": f"{model_id}_{int(time.time())}",
+            "prompt": prompt[:300],
+            "response": response_text[:300],
+            "latency_ms": float(latency_ms),
+            "timestamp": int(time.time())
+        }).encode()
+        req = urllib.request.Request(
+            "https://api.arize.com/v1/log",
+            data=log_data,
+            headers={
+                "Authorization": f"Bearer {ARIZE_API_KEY}",
+                "Arize-Space-Id": ARIZE_SPACE_ID,
+                "Content-Type": "application/json"
+            },
+            method="POST"
         )
-        pred_id = f"{model_id}_{int(time.time())}"
-        df = pd.DataFrame([{
-            "prediction_id": pred_id,
-            "prompt":        prompt[:500],
-            "response":      response_text[:500],
-            "latency_ms":    float(latency_ms),
-        }])
-        schema = Schema(
-            prediction_id_column_name="prediction_id",
-            prompt_column_name="prompt",
-            response_column_name="response",
-        )
-        res = arize_logger.log(
-            dataframe=df,
-            schema=schema,
-            model_id=model_id,
-            model_type=ModelTypes.GENERATIVE_LLM,
-            environment=Environments.PRODUCTION,
-            model_version="gemini-2.5-flash",
-        )
-        print(f"Arize logged: {model_id} ({latency_ms}ms) status={res.status_code}")
+        with urllib.request.urlopen(req, timeout=5) as r:
+            print(f"Arize logged: {model_id} ({latency_ms}ms) status={r.status}")
     except Exception as e:
         print(f"Arize logging error (non-critical): {e}")
 
-async def save_to_mongodb(project_name, idea, result):
-    if not MONGODB_ENABLED or projects_collection is None:
-        print("MongoDB disabled — skipping save")
+async def save_project(project_name, idea, result):
+    if not FIRESTORE_ENABLED or projects_ref is None:
+        print("Firestore disabled — skipping save")
         return
     try:
         doc = {
             "project_name": project_name,
             "idea": idea,
-            "result": result,
             "created_at": datetime.utcnow(),
-            "timestamp": int(time.time())
+            "timestamp": int(time.time()),
+            "timeline_weeks": result.get("timeline_weeks", 0),
+            "team_size": result.get("team_size", 0),
+            "total_cost_usd": result.get("total_cost_usd", 0)
         }
-        await projects_collection.insert_one(doc)
-        print(f"Saved to MongoDB: {project_name}")
+        projects_ref.add(doc)
+        print(f"Saved to Firestore: {project_name}")
     except Exception as e:
-        print(f"MongoDB save error (non-critical): {e}")
+        print(f"Firestore save error (non-critical): {e}")
 
 @app.post("/run")
 async def run_company(req: ProjectRequest):
@@ -191,7 +173,7 @@ async def run_company(req: ProjectRequest):
         latency = int((time.time() - start) * 1000)
         text = clean_json(response.text)
         result = json.loads(text)
-        await save_to_mongodb(result.get("project_name", "Unknown"), req.idea, result)
+        await save_project(result.get("project_name", "Unknown"), req.idea, result)
         log_to_arize("orchestrator-agent", req.idea, response.text, latency)
         return result
     except Exception as e:
@@ -211,12 +193,9 @@ async def build_app(req: BuildRequest):
         ]
         for filename, language, description in file_specs:
             try:
-                prompt = f"Project: {req.project_name}\nIdea: {req.idea}\n\nWrite {description} for this project.\nReturn ONLY the raw {language} code. No explanation. No markdown fences."
+                prompt = f"Project: {req.project_name}\nIdea: {req.idea}\n\nWrite {description}.\nReturn ONLY raw {language} code. No markdown."
                 start = time.time()
-                response = client.models.generate_content(
-                    model="gemini-2.5-flash",
-                    contents=prompt
-                )
+                response = gemini_generate(prompt)
                 latency = int((time.time() - start) * 1000)
                 content = response.text.strip()
                 if content.startswith("```"):
@@ -241,35 +220,17 @@ async def agent_meeting(req: MeetingRequest):
     try:
         prompt = f"""
 Project: {req.project_name}
-Plan summary:
-- Timeline: {req.plan.get('timeline_weeks')} weeks
-- Team: {req.plan.get('team_size')} people
-- Cost: ${req.plan.get('total_cost_usd')}
-- Stack: {req.plan.get('departments', {}).get('architect', {}).get('backend')} / {req.plan.get('departments', {}).get('architect', {}).get('frontend')}
-- Complexity: {req.plan.get('departments', {}).get('dev', {}).get('complexity')}
-- Top risk: {req.plan.get('top_risks', ['Unknown'])[0]}
+Plan: Timeline {req.plan.get('timeline_weeks')}w, Team {req.plan.get('team_size')}, Cost ${req.plan.get('total_cost_usd')}
+Stack: {req.plan.get('departments',{}).get('architect',{}).get('backend')} / {req.plan.get('departments',{}).get('architect',{}).get('frontend')}
+Risk: {req.plan.get('top_risks',['Unknown'])[0]}
 
-Simulate a short internal team meeting between these AI agents discussing this project.
-Return ONLY a JSON array of 8 messages like this:
-[
-  {{"agent": "PM Agent",        "message": "...", "type": "normal"}},
-  {{"agent": "Architect Agent", "message": "...", "type": "concern"}},
-  {{"agent": "Dev Agent",       "message": "...", "type": "normal"}},
-  {{"agent": "QA Agent",        "message": "...", "type": "warning"}},
-  {{"agent": "DevOps Agent",    "message": "...", "type": "normal"}},
-  {{"agent": "PM Agent",        "message": "...", "type": "decision"}},
-  {{"agent": "Marketing Agent", "message": "...", "type": "normal"}},
-  {{"agent": "Dev Agent",       "message": "...", "type": "concern"}}
-]
-Type must be one of: normal, concern, warning, decision
-Messages must be realistic and specific to this project.
-Return ONLY the JSON array. No markdown. No explanation.
+Simulate 8 agent messages as a JSON array:
+[{{"agent":"PM Agent","message":"...","type":"normal"}},{{"agent":"Architect Agent","message":"...","type":"concern"}},{{"agent":"Dev Agent","message":"...","type":"normal"}},{{"agent":"QA Agent","message":"...","type":"warning"}},{{"agent":"DevOps Agent","message":"...","type":"normal"}},{{"agent":"PM Agent","message":"...","type":"decision"}},{{"agent":"Marketing Agent","message":"...","type":"normal"}},{{"agent":"Dev Agent","message":"...","type":"concern"}}]
+Types: normal, concern, warning, decision. Be specific to this project.
+Return ONLY the JSON array.
 """
         start = time.time()
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt
-        )
+        response = gemini_generate(prompt)
         latency = int((time.time() - start) * 1000)
         text = clean_json(response.text)
         messages = json.loads(text)
@@ -282,71 +243,41 @@ Return ONLY the JSON array. No markdown. No explanation.
 @app.post("/push-github")
 async def push_to_github(req: GitHubRequest):
     try:
-        repo_name = req.project_name.lower().replace(" ", "-").replace("_", "-")
-        repo_name = re.sub(r'[^a-z0-9-]', '', repo_name)[:50]
-        headers = {
-            "Authorization": f"token {GITHUB_TOKEN}",
-            "Accept": "application/vnd.github.v3+json",
-            "Content-Type": "application/json"
-        }
-        create_data = json.dumps({
-            "name": repo_name,
-            "description": req.description,
-            "private": False,
-            "auto_init": True
-        }).encode()
-        github_req = urllib.request.Request(
-            "https://api.github.com/user/repos",
-            data=create_data,
-            headers=headers,
-            method="POST"
-        )
-        with urllib.request.urlopen(github_req) as response:
-            repo_data = json.loads(response.read())
+        repo_name = re.sub(r'[^a-z0-9-]', '', req.project_name.lower().replace(" ","-"))[:50]
+        headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json", "Content-Type": "application/json"}
+        create_data = json.dumps({"name": repo_name, "description": req.description, "private": False, "auto_init": True}).encode()
+        github_req = urllib.request.Request("https://api.github.com/user/repos", data=create_data, headers=headers, method="POST")
+        with urllib.request.urlopen(github_req) as r:
+            repo_data = json.loads(r.read())
         repo_url = repo_data["html_url"]
         time.sleep(2)
         pushed = 0
         for file in req.files:
             try:
-                file_data = json.dumps({
-                    "message": f"Add {file['filename']}",
-                    "content": base64.b64encode(file["content"].encode("utf-8", errors="replace")).decode()
-                }).encode()
-                file_req = urllib.request.Request(
-                    f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}/contents/{file['filename']}",
-                    data=file_data,
-                    headers=headers,
-                    method="PUT"
-                )
+                file_data = json.dumps({"message": f"Add {file['filename']}", "content": base64.b64encode(file["content"].encode("utf-8", errors="replace")).decode()}).encode()
+                file_req = urllib.request.Request(f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}/contents/{file['filename']}", data=file_data, headers=headers, method="PUT")
                 with urllib.request.urlopen(file_req) as r:
                     pushed += 1
                 time.sleep(0.5)
             except Exception as fe:
                 print(f"File error {file['filename']}: {fe}")
         issues = [
-            {"title": "Set up project infrastructure",  "body": "DevOps: Configure CI/CD, Docker, cloud deployment"},
-            {"title": "Implement authentication system", "body": "Dev: User registration, login, JWT tokens"},
-            {"title": "Build core API endpoints",        "body": "Dev: REST API for main features"},
-            {"title": "Create frontend UI",              "body": "Dev: Mobile/web interface"},
-            {"title": "Write test suite",                "body": "QA: Unit, integration and e2e tests"},
-            {"title": "Launch marketing campaign",       "body": "Marketing: GTM strategy execution"},
+            {"title": "Set up project infrastructure",  "body": "DevOps: Configure CI/CD"},
+            {"title": "Implement authentication",        "body": "Dev: User auth"},
+            {"title": "Build core API endpoints",        "body": "Dev: REST API"},
+            {"title": "Create frontend UI",              "body": "Dev: UI"},
+            {"title": "Write test suite",                "body": "QA: Tests"},
+            {"title": "Launch marketing campaign",       "body": "Marketing: GTM"},
         ]
         created = 0
         for issue in issues:
             try:
-                issue_data = json.dumps({"title": issue["title"], "body": issue["body"]}).encode()
-                issue_req = urllib.request.Request(
-                    f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}/issues",
-                    data=issue_data,
-                    headers=headers,
-                    method="POST"
-                )
+                issue_req = urllib.request.Request(f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}/issues", data=json.dumps(issue).encode(), headers=headers, method="POST")
                 with urllib.request.urlopen(issue_req) as r:
                     created += 1
                 time.sleep(0.3)
-            except Exception as ie:
-                print(f"Issue error: {ie}")
-        return {"success": True, "repo_url": repo_url, "repo_name": repo_name, "files_pushed": pushed, "issues_created": created}
+            except: pass
+        return {"success": True, "repo_url": repo_url, "files_pushed": pushed, "issues_created": created}
     except Exception as e:
         print(traceback.format_exc())
         return {"success": False, "error": str(e)}
@@ -354,117 +285,64 @@ async def push_to_github(req: GitHubRequest):
 @app.post("/push-gitlab")
 async def push_to_gitlab(req: GitLabRequest):
     try:
-        repo_name = req.project_name.lower().replace(" ", "-").replace("_", "-")
-        repo_name = re.sub(r'[^a-z0-9-]', '', repo_name)[:50]
-        headers = {
-            "PRIVATE-TOKEN": GITLAB_TOKEN,
-            "Content-Type": "application/json"
-        }
-        create_data = json.dumps({
-            "name": repo_name,
-            "description": req.description,
-            "visibility": "public",
-            "initialize_with_readme": True
-        }).encode()
-        create_req = urllib.request.Request(
-            "https://gitlab.com/api/v4/projects",
-            data=create_data,
-            headers=headers,
-            method="POST"
-        )
-        with urllib.request.urlopen(create_req) as response:
-            project_data = json.loads(response.read())
+        repo_name = re.sub(r'[^a-z0-9-]', '', req.project_name.lower().replace(" ","-"))[:50]
+        headers = {"PRIVATE-TOKEN": GITLAB_TOKEN, "Content-Type": "application/json"}
+        create_data = json.dumps({"name": repo_name, "description": req.description, "visibility": "public", "initialize_with_readme": True}).encode()
+        create_req = urllib.request.Request("https://gitlab.com/api/v4/projects", data=create_data, headers=headers, method="POST")
+        with urllib.request.urlopen(create_req) as r:
+            project_data = json.loads(r.read())
         project_id  = project_data["id"]
         project_url = project_data["web_url"]
-        print(f"GitLab project created: {project_url}")
         time.sleep(2)
         pushed = 0
         for file in req.files:
             try:
-                file_data = json.dumps({
-                    "branch": "main",
-                    "commit_message": f"Add {file['filename']}",
-                    "content": file["content"]
-                }).encode()
-                encoded_filename = urllib.parse.quote(file["filename"], safe="")
-                file_req = urllib.request.Request(
-                    f"https://gitlab.com/api/v4/projects/{project_id}/repository/files/{encoded_filename}",
-                    data=file_data,
-                    headers=headers,
-                    method="POST"
-                )
+                file_data = json.dumps({"branch": "main", "commit_message": f"Add {file['filename']}", "content": file["content"]}).encode()
+                encoded_fn = urllib.parse.quote(file["filename"], safe="")
+                file_req = urllib.request.Request(f"https://gitlab.com/api/v4/projects/{project_id}/repository/files/{encoded_fn}", data=file_data, headers=headers, method="POST")
                 with urllib.request.urlopen(file_req) as r:
                     pushed += 1
                 time.sleep(0.5)
             except Exception as fe:
-                print(f"GitLab file error {file['filename']}: {fe}")
+                print(f"GitLab file error: {fe}")
         issues = [
-            {"title": "Set up CI/CD pipeline",          "description": "DevOps: Configure GitLab CI/CD, Docker, cloud deployment"},
-            {"title": "Implement authentication system", "description": "Dev: User registration, login, JWT tokens"},
-            {"title": "Build core API endpoints",        "description": "Dev: REST API for main features"},
-            {"title": "Create frontend UI",              "description": "Dev: Mobile/web interface"},
-            {"title": "Write test suite",                "description": "QA: Unit, integration and e2e tests"},
-            {"title": "Launch marketing campaign",       "description": "Marketing: GTM strategy execution"},
+            {"title": "Set up CI/CD pipeline",          "description": "DevOps: GitLab CI/CD"},
+            {"title": "Implement authentication",        "description": "Dev: Auth system"},
+            {"title": "Build core API endpoints",        "description": "Dev: REST API"},
+            {"title": "Create frontend UI",              "description": "Dev: UI"},
+            {"title": "Write test suite",                "description": "QA: Tests"},
+            {"title": "Launch marketing campaign",       "description": "Marketing: GTM"},
         ]
         created = 0
         for issue in issues:
             try:
-                issue_data = json.dumps({
-                    "title": issue["title"],
-                    "description": issue["description"]
-                }).encode()
-                issue_req = urllib.request.Request(
-                    f"https://gitlab.com/api/v4/projects/{project_id}/issues",
-                    data=issue_data,
-                    headers=headers,
-                    method="POST"
-                )
+                issue_req = urllib.request.Request(f"https://gitlab.com/api/v4/projects/{project_id}/issues", data=json.dumps(issue).encode(), headers=headers, method="POST")
                 with urllib.request.urlopen(issue_req) as r:
                     created += 1
                 time.sleep(0.3)
-            except Exception as ie:
-                print(f"GitLab issue error: {ie}")
+            except: pass
         try:
-            milestone_data = json.dumps({
-                "title": "Sprint 1 — MVP",
-                "description": "First sprint focusing on core features"
-            }).encode()
-            milestone_req = urllib.request.Request(
-                f"https://gitlab.com/api/v4/projects/{project_id}/milestones",
-                data=milestone_data,
-                headers=headers,
-                method="POST"
-            )
-            with urllib.request.urlopen(milestone_req) as r:
-                print("GitLab milestone created")
-        except Exception as me:
-            print(f"Milestone error: {me}")
-        return {
-            "success": True,
-            "project_url": project_url,
-            "project_id": project_id,
-            "project_name": repo_name,
-            "files_pushed": pushed,
-            "issues_created": created
-        }
+            ms_data = json.dumps({"title": "Sprint 1 — MVP", "description": "First sprint"}).encode()
+            ms_req = urllib.request.Request(f"https://gitlab.com/api/v4/projects/{project_id}/milestones", data=ms_data, headers=headers, method="POST")
+            with urllib.request.urlopen(ms_req) as r: pass
+        except: pass
+        return {"success": True, "project_url": project_url, "project_id": project_id, "files_pushed": pushed, "issues_created": created}
     except Exception as e:
         print(traceback.format_exc())
         return {"success": False, "error": str(e)}
 
 @app.get("/projects")
 async def get_projects():
-    if not MONGODB_ENABLED or projects_collection is None:
-        return {"projects": [], "message": "MongoDB not available"}
+    if not FIRESTORE_ENABLED or projects_ref is None:
+        return {"projects": [], "message": "Firestore not available"}
     try:
-        cursor = projects_collection.find(
-            {},
-            {"_id": 0, "project_name": 1, "idea": 1, "created_at": 1,
-             "result.timeline_weeks": 1, "result.team_size": 1, "result.total_cost_usd": 1}
-        ).sort("created_at", -1).limit(10)
-        projects = await cursor.to_list(length=10)
-        for p in projects:
-            if "created_at" in p:
-                p["created_at"] = p["created_at"].strftime("%Y-%m-%d %H:%M")
+        docs = projects_ref.order_by("timestamp", direction=fs.Query.DESCENDING).limit(10).stream()
+        projects = []
+        for doc in docs:
+            d = doc.to_dict()
+            if "created_at" in d and hasattr(d["created_at"], "strftime"):
+                d["created_at"] = d["created_at"].strftime("%Y-%m-%d %H:%M")
+            projects.append(d)
         return {"projects": projects}
     except Exception as e:
         print(traceback.format_exc())
@@ -474,7 +352,7 @@ async def get_projects():
 def health():
     return {
         "status": "AI Company backend running",
-        "mongodb": "connected",
+        "firestore": "connected" if FIRESTORE_ENABLED else "disabled",
         "arize": "connected",
         "gitlab": "connected"
     }

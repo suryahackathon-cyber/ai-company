@@ -1,11 +1,10 @@
 fastapi==0.115.0
 uvicorn==0.30.0
 google-genai
+google-cloud-firestore
 python-dotenv==1.0.0
 aiofiles==23.2.1
-pymongo[srv]==4.4.1
-motor==3.1.2
-dnspython==2.4.2
-certifi
-arize[pandas]
+arize
+opentelemetry-sdk
+opentelemetry-exporter-otlp-proto-grpc
 pandas
