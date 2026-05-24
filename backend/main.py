@@ -35,9 +35,7 @@ from pymongo import MongoClient
 try:
     mongo_client = MongoClient(
         MONGODB_URI,
-        tls=True,
         tlsAllowInvalidCertificates=True,
-        tlsInsecure=True,
         serverSelectionTimeoutMS=10000,
         connectTimeoutMS=10000,
         socketTimeoutMS=10000
