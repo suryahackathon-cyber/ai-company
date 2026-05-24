@@ -16,3 +16,14 @@ INFO:     127.0.0.1:46918 - "POST /run HTTP/1.1" 200 OK
 INFO:     127.0.0.1:46918 - "GET /projects HTTP/1.1" 200 OK
 Arize logging error (non-critical): HTTP Error 400: Bad Request
 INFO:     127.0.0.1:51724 - "POST /meeting HTTP/1.1" 200 OK
+Arize logging error (non-critical): HTTP Error 400: Bad Request
+Generated: backend/server.js
+Arize logging error (non-critical): HTTP Error 400: Bad Request
+Generated: backend/schema.sql
+Arize logging error (non-critical): HTTP Error 400: Bad Request
+Generated: frontend/App.js
+Arize logging error (non-critical): HTTP Error 400: Bad Request
+Generated: docker-compose.yml
+Arize logging error (non-critical): HTTP Error 400: Bad Request
+Generated: README.md
+INFO:     127.0.0.1:43290 - "POST /build HTTP/1.1" 200 OK
