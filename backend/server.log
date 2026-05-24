@@ -1,5 +1,5 @@
 nohup: ignoring input
-INFO:     Started server process [2556]
+INFO:     Started server process [2787]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
@@ -7,6 +7,6 @@ Google key loaded: AIzaSyAl9j...
 GitLab user: suryahackathon-cyber
 MongoDB: Connected
 Arize: Connected
-MongoDB connection failed (non-critical): SSL handshake failed: ac-j5lljjg-shard-00-00.9dcmmas.mongodb.net:27017: [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1000) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 5.0s, Topology Description: <TopologyDescription id: 6a12aa9b56a59c50b9898060, topology_type: ReplicaSetNoPrimary, servers: [<ServerDescription ('ac-j5lljjg-shard-00-00.9dcmmas.mongodb.net', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('SSL handshake failed: ac-j5lljjg-shard-00-00.9dcmmas.mongodb.net:27017: [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1000) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>, <ServerDescription ('ac-j5lljjg-shard-00-01.9dcmmas.mongodb.net', 27017) server_type: Unknown, rtt: None>, <ServerDescription ('ac-j5lljjg-shard-00-02.9dcmmas.mongodb.net', 27017) server_type: Unknown, rtt: None>]>
+MongoDB connection failed (non-critical): URI options tlsInsecure and tlsAllowInvalidCertificates cannot be specified simultaneously.
 Arize ready!
-INFO:     127.0.0.1:53760 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60226 - "GET /health HTTP/1.1" 200 OK

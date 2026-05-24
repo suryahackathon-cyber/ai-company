@@ -37,7 +37,10 @@ try:
         MONGODB_URI,
         tls=True,
         tlsAllowInvalidCertificates=True,
-        serverSelectionTimeoutMS=5000
+        tlsInsecure=True,
+        serverSelectionTimeoutMS=10000,
+        connectTimeoutMS=10000,
+        socketTimeoutMS=10000
     )
     db = mongo_client["ai_company"]
     projects_collection = db["projects"]
@@ -136,16 +139,17 @@ def log_to_arize(model_id, prompt, response_text, latency_ms, tokens=0):
     try:
         import pandas as pd
         from arize.pandas.logger import Client as ArizeLogger
-        from arize.utils.types import ModelTypes, Environments, Schema
+        from arize.utils.types import ModelTypes, Environments, Schema, Metrics
         arize_logger = ArizeLogger(
             space_id=ARIZE_SPACE_ID,
             api_key=ARIZE_API_KEY
         )
+        pred_id = f"{model_id}_{int(time.time())}"
         df = pd.DataFrame([{
-            "prediction_id": f"{model_id}_{int(time.time())}",
-            "prompt": prompt[:500],
-            "response": response_text[:500],
-            "latency_ms": float(latency_ms),
+            "prediction_id": pred_id,
+            "prompt":        prompt[:500],
+            "response":      response_text[:500],
+            "latency_ms":    float(latency_ms),
         }])
         schema = Schema(
             prediction_id_column_name="prediction_id",
