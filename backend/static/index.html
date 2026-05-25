@@ -109,7 +109,28 @@
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
       <span style="font-size:13px;font-weight:500;color:#1a1a2e">Describe your project idea</span>
       <div class="toggle-wrap">
-        <span class="toggle-label">CEO Mode</span>
+        <div style="display:flex;align-items:center;gap:6px;margin-right:12px">
+          <span id="mode-label" style="font-size:12px;font-weight:500;color:#666">API Mode</span>
+          <label class="toggle">
+            <input type="checkbox" id="adk-toggle" onchange="
+              const b=document.getElementById('adk-badge');
+              const l=document.getElementById('mode-label');
+              if(this.checked){
+                l.textContent='ADK Mode';
+                l.style.color='#534AB7';
+                b.style.display='inline';
+                b.textContent='Agent Builder Active';
+              } else {
+                l.textContent='API Mode';
+                l.style.color='#666';
+                b.style.display='none';
+              }
+            ">
+            <span class="slider"></span>
+          </label>
+          <span id="adk-badge" style="font-size:10px;background:#534AB711;color:#534AB7;padding:2px 6px;border-radius:10px;display:none">Agent Builder</span>
+        </div>
+      <span class="toggle-label">CEO Mode</span>
         <label class="toggle">
           <input type="checkbox" id="ceo-toggle" onchange="toggleCEO()">
           <span class="slider"></span>
@@ -343,7 +364,7 @@ function renderResult(data) {
     <div class="summary">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
         <h2 style="font-size:15px;font-weight:500;color:#fff">${data.project_name} — Executive Summary</h2>
-        <span style="font-size:10px;color:#666">GitLab · Firestore · Arize</span>
+        <span style="font-size:10px;color:#666">${data.adk_used ? "Agent Builder · " : ""}GitLab · Firestore · Arize</span>
       </div>
       <div class="metrics">
         <div class="metric"><div class="metric-label">Timeline</div><div class="metric-value">${data.timeline_weeks} weeks</div></div>
@@ -678,7 +699,16 @@ async function launch() {
     setProgress(5 + ((i+1)/AGENTS.length)*40)
   }
   setProgress(50)
-  const res = await fetch("/run", {
+  const adkMode = document.getElementById("adk-toggle").checked
+  const endpoint = adkMode ? "/run-adk" : "/run"
+  const badge = document.getElementById("adk-badge")
+  if (adkMode) {
+    badge.style.display = "inline"
+    badge.textContent = "Agent Builder Active"
+  } else {
+    badge.style.display = "none"
+  }
+  const res = await fetch(endpoint, {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ idea })
   })
