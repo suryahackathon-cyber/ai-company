@@ -222,7 +222,10 @@ Requirements:
                 response = gemini_generate(prompt)
                 latency = int((time.time() - start) * 1000)
                 content = response.text.strip()
-                if content.startswith("```"):
+                # Handle upstream errors
+                if "upstream" in content.lower() or "error" in content.lower()[:50]:
+                    content = f"// Error generating this file - please retry\n// {content[:100]}"
+                elif content.startswith("```"):
                     content = content.split("```")[1]
                     if content.split("\n")[0] in ["javascript","sql","yaml","markdown","js","md"]:
                         content = "\n".join(content.split("\n")[1:])

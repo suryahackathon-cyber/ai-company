@@ -1,69 +1,13 @@
 nohup: ignoring input
-INFO:     Started server process [2320]
+INFO:     Started server process [1151]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
-Google key loaded: AIzaSyAXRu...
+ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0Google key loaded: AIzaSyAXRu...
 GitLab user: suryahackathon-cyber
 ADK agents loaded successfully!
 Firestore connected successfully!
 Arize: Connected
-INFO:     127.0.0.1:47462 - "GET /health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48206 - "GET /?authuser=0 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48206 - "GET /projects HTTP/1.1" 200 OK
-/home/surya_hackathon/ai-team-hackathon/backend/main.py:501: RuntimeWarning: coroutine 'InMemorySessionService.create_session' was never awaited
-  session_service.create_session(
-RuntimeWarning: Enable tracemalloc to get the object allocation traceback
-Traceback (most recent call last):
-  File "/home/surya_hackathon/ai-team-hackathon/backend/main.py", line 511, in run_with_adk
-    async for event in runner.run_async(
-  File "/home/surya_hackathon/.local/lib/python3.12/site-packages/google/adk/runners.py", line 965, in run_async
-    session = await self._get_or_create_session(
-              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/surya_hackathon/.local/lib/python3.12/site-packages/google/adk/runners.py", line 846, in _get_or_create_session
-    raise SessionNotFoundError(message)
-google.adk.errors.session_not_found_error.SessionNotFoundError: Session not found: 4eb713f4-fc2a-4ea4-a9e0-ce90676a7f80
-
-ADK failed, falling back to regular Gemini...
-Saved to Firestore: Chess Champion Mobile App
-[38;21m  arize.utils.arrow | INFO | ✅ Success! Check out your data at https://app.arize.com/organizations/QWNjb3VudE9yZ2FuaXphdGlvbjo0MjkxNjpaeTIw/spaces/U3BhY2U6NDUyNzU6WmZsUA==/models/modelName/ai-company?selectedTab=llmTracing[0m
-Arize logged: orchestrator-agent (9893ms) status=200
-INFO:     127.0.0.1:33398 - "POST /run-adk HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58226 - "GET /projects HTTP/1.1" 200 OK
-[38;21m  arize.utils.arrow | INFO | ✅ Success! Check out your data at https://app.arize.com/organizations/QWNjb3VudE9yZ2FuaXphdGlvbjo0MjkxNjpaeTIw/spaces/U3BhY2U6NDUyNzU6WmZsUA==/models/modelName/ai-company?selectedTab=llmTracing[0m
-Arize logged: meeting-agent (7951ms) status=200
-INFO:     127.0.0.1:47462 - "POST /meeting HTTP/1.1" 200 OK
-[38;21m  arize.utils.arrow | INFO | ✅ Success! Check out your data at https://app.arize.com/organizations/QWNjb3VudE9yZ2FuaXphdGlvbjo0MjkxNjpaeTIw/spaces/U3BhY2U6NDUyNzU6WmZsUA==/models/modelName/ai-company?selectedTab=llmTracing[0m
-Arize logged: dev-agent (57872ms) status=200
-Generated: backend/server.js
-[38;21m  arize.utils.arrow | INFO | ✅ Success! Check out your data at https://app.arize.com/organizations/QWNjb3VudE9yZ2FuaXphdGlvbjo0MjkxNjpaeTIw/spaces/U3BhY2U6NDUyNzU6WmZsUA==/models/modelName/ai-company?selectedTab=llmTracing[0m
-Arize logged: dev-agent (62835ms) status=200
-Generated: backend/schema.sql
-[38;21m  arize.utils.arrow | INFO | ✅ Success! Check out your data at https://app.arize.com/organizations/QWNjb3VudE9yZ2FuaXphdGlvbjo0MjkxNjpaeTIw/spaces/U3BhY2U6NDUyNzU6WmZsUA==/models/modelName/ai-company?selectedTab=llmTracing[0m
-Arize logged: dev-agent (69145ms) status=200
-Generated: frontend/App.js
-[38;21m  arize.utils.arrow | INFO | ✅ Success! Check out your data at https://app.arize.com/organizations/QWNjb3VudE9yZ2FuaXphdGlvbjo0MjkxNjpaeTIw/spaces/U3BhY2U6NDUyNzU6WmZsUA==/models/modelName/ai-company?selectedTab=llmTracing[0m
-Arize logged: dev-agent (24093ms) status=200
-Generated: docker-compose.yml
-[38;21m  arize.utils.arrow | INFO | ✅ Success! Check out your data at https://app.arize.com/organizations/QWNjb3VudE9yZ2FuaXphdGlvbjo0MjkxNjpaeTIw/spaces/U3BhY2U6NDUyNzU6WmZsUA==/models/modelName/ai-company?selectedTab=llmTracing[0m
-Arize logged: dev-agent (41400ms) status=200
-Generated: README.md
-INFO:     127.0.0.1:45180 - "POST /build HTTP/1.1" 200 OK
-/home/surya_hackathon/ai-team-hackathon/backend/main.py:501: RuntimeWarning: coroutine 'InMemorySessionService.create_session' was never awaited
-  session_service.create_session(
-RuntimeWarning: Enable tracemalloc to get the object allocation traceback
-Traceback (most recent call last):
-  File "/home/surya_hackathon/ai-team-hackathon/backend/main.py", line 511, in run_with_adk
-    async for event in runner.run_async(
-  File "/home/surya_hackathon/.local/lib/python3.12/site-packages/google/adk/runners.py", line 965, in run_async
-    session = await self._get_or_create_session(
-              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/surya_hackathon/.local/lib/python3.12/site-packages/google/adk/runners.py", line 846, in _get_or_create_session
-    raise SessionNotFoundError(message)
-google.adk.errors.session_not_found_error.SessionNotFoundError: Session not found: e88171a6-d091-42b1-9a08-a1946cb0a173
-
-ADK failed, falling back to regular Gemini...
-Saved to Firestore: Productivity Pulse: A Smart Todo App
-[38;21m  arize.utils.arrow | INFO | ✅ Success! Check out your data at https://app.arize.com/organizations/QWNjb3VudE9yZ2FuaXphdGlvbjo0MjkxNjpaeTIw/spaces/U3BhY2U6NDUyNzU6WmZsUA==/models/modelName/ai-company?selectedTab=llmTracing[0m
-Arize logged: orchestrator-agent (10953ms) status=200
-INFO:     127.0.0.1:55484 - "POST /run-adk HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53190 - "GET /health HTTP/1.1" 200 OK
+ssfully!
+Firestore connected successfully!
+Arize: Connected
