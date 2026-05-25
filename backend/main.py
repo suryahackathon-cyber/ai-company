@@ -194,7 +194,18 @@ async def build_app(req: BuildRequest):
         ]
         for filename, language, description in file_specs:
             try:
-                prompt = f"Project: {req.project_name}\nIdea: {req.idea}\n\nWrite {description}.\nReturn ONLY raw {language} code. No markdown."
+                prompt = f"""Project: {req.project_name}
+Idea: {req.idea}
+
+Write {description} for this project.
+Return ONLY raw {language} code. No markdown fences. No explanation.
+Requirements:
+- Include all environment variables with clear names and example values in comments
+- Add error handling for all database operations
+- Include comments explaining each major section
+- Make it runnable with minimal setup
+- Use best practices for {language}
+"""
                 start = time.time()
                 response = gemini_generate(prompt)
                 latency = int((time.time() - start) * 1000)

@@ -1,20 +1,12 @@
 nohup: ignoring input
-INFO:     Started server process [2915]
+INFO:     Started server process [1158]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
-Google key loaded: AIzaSyAXRu...
+ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0Google key loaded: AIzaSyAXRu...
 GitLab user: suryahackathon-cyber
 Firestore connected successfully!
 Arize: Connected
-INFO:     127.0.0.1:42574 - "GET /health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58464 - "GET /?authuser=0 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58464 - "GET /projects HTTP/1.1" 200 OK
-Saved to Firestore: FamilySafe Tracker
-[38;21m  arize.utils.arrow | INFO | ✅ Success! Check out your data at https://app.arize.com/organizations/QWNjb3VudE9yZ2FuaXphdGlvbjo0MjkxNjpaeTIw/spaces/U3BhY2U6NDUyNzU6WmZsUA==/models/modelName/ai-company?selectedTab=llmTracing[0m
-Arize logged: orchestrator-agent (9792ms) status=200
-INFO:     127.0.0.1:54672 - "POST /run HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50302 - "GET /projects HTTP/1.1" 200 OK
-[38;21m  arize.utils.arrow | INFO | ✅ Success! Check out your data at https://app.arize.com/organizations/QWNjb3VudE9yZ2FuaXphdGlvbjo0MjkxNjpaeTIw/spaces/U3BhY2U6NDUyNzU6WmZsUA==/models/modelName/ai-company?selectedTab=llmTracing[0m
-Arize logged: meeting-agent (6950ms) status=200
-INFO:     127.0.0.1:50312 - "POST /meeting HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45088 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45090 - "GET /?authuser=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45090 - "GET /projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45096 - "GET /favicon.ico HTTP/1.1" 404 Not Found
